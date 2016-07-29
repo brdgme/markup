@@ -1,0 +1,9 @@
+[package]
+name = "brdgme-markup"
+version = "0.1.0"
+authors = ["mick"]
+
+[dependencies]
+log = "^0.3.6"
+env_logger = "^0.3.4"
+combine = "2.0.0-beta"
