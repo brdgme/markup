@@ -119,11 +119,9 @@ This is {{#b}}totally {{#fg green}}some markup{{/fg}} yeah{{/b}}.
                      vec!["bacon".to_string(), "egg".to_string()]),
                     " cheese"),
                    parser(tag_parts).parse("{{/fartypoo bacon egg}} cheese").unwrap());
-        assert_eq!(((Some('/'),
-                     "fartypoo".to_string(),
-                     vec!["bacon".to_string(), "egg".to_string()]),
+        assert_eq!(((None, "fartypoo".to_string(), vec!["bacon".to_string(), "egg".to_string()]),
                     " cheese"),
-                   parser(tag_parts).parse("{{/fartypoo bacon egg}} cheese").unwrap());
+                   parser(tag_parts).parse("{{fartypoo bacon egg}} cheese").unwrap());
     }
 
     #[test]
