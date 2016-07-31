@@ -7,3 +7,4 @@ authors = ["mick"]
 log = "^0.3.6"
 env_logger = "^0.3.4"
 combine = "2.0.0-beta"
+nom = "^1.2.4"
