@@ -1,0 +1,45 @@
+use super::ast::Node;
+
+#[pub]
+tag_name -> String
+  = tag_word
+
+tag_word -> String
+  = [^ }]+ { match_str.to_string() }
+
+not_quote -> String
+  = [^"]+ { match_str.to_string() }
+
+tag_arg -> String
+  = [ ]+ "\"" a:not_quote "\"" { a }
+  / [ ]+ a:tag_word { a }
+
+#[pub]
+tag -> Node
+  = tag_open "#" n:tag_name a:tag_arg* "}}" c:node* "{{/" cn:tag_name "}}" {?
+    if n == cn {
+      Ok(Node::Tag(n, a, c))
+    } else {
+      Err("unmatched close tag")
+    }
+  }
+  / tag_open &[^#/] n:tag_name a:tag_arg* "}}" { Node::Tag(n, a, vec![]) }
+
+#[pub]
+node -> Node
+  = tag
+  / text
+
+#[pub]
+text -> Node
+  = t:text_chunk+ { Node::Text(t.join("")) }
+
+text_chunk -> String
+  = !tag_open .[^{]* { match_str.to_string() }
+
+tag_open -> ()
+  = "{{"
+
+#[pub]
+markup -> Vec<Node>
+  = node*
