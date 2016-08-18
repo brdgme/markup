@@ -34,37 +34,31 @@ pub fn default_transform(players: Vec<String>) -> TransformFuncs {
 fn player_transform(node: Node, players: Vec<String>) -> Result<Vec<Node>, String> {
     match node {
         Node::Text(_) => return Err("expected player tag, got text node".to_string()),
-        Node::Tag(ref name, ref tags, ref children) => {
+        Node::Tag(_, ref tags, ref children) => {
             if children.len() > 0 {
                 return Err("player tag should not have children".to_string());
-            } else if tags.len() != 1 {
+            }
+            if tags.len() != 1 {
                 return Err("player tag should have exactly one argument".to_string());
-            } else {
-                if let Ok(pnum) = tags[0].parse::<usize>() {
-                    if pnum > players.len() {
-                        return Err(format!("got player number {} but there are only {} players",
-                                           pnum,
-                                           players.len()));
-                    }
-                    return Ok(vec![
-                        Node::Tag("b".to_string(), vec![], vec![
-                            Node::Tag("fg".to_string(), vec![brdgme_color::player_color(pnum).hex()], vec![
-                                Node::Text(players[pnum].clone()),
-                            ]),
-                        ]),
-                    ]);
-                } else {
-                    return Err("player tag argument must be a positive integer".to_string());
+            }
+            if let Ok(pnum) = tags[0].parse::<usize>() {
+                if pnum > players.len() {
+                    return Err(format!("got player number {} but there are only {} players",
+                                        pnum,
+                                        players.len()));
                 }
+                return Ok(vec![
+                    Node::Tag("b".to_string(), vec![], vec![
+                        Node::Tag("fg".to_string(), vec![brdgme_color::player_color(pnum).hex()], vec![
+                            Node::Text(players[pnum].clone()),
+                        ]),
+                    ]),
+                ]);
+            } else {
+                return Err("player tag argument must be a positive integer".to_string());
             }
         }
     }
-}
-
-pub fn render<F>(input: Vec<Node>, funcs: HashMap<String, F>) -> Result<String, String>
-    where F: Fn(Node) -> Result<String, String>
-{
-    Ok("done".to_string())
 }
 
 #[cfg(test)]
