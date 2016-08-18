@@ -1,7 +1,10 @@
 #![feature(plugin)]
 #![plugin(peg_syntax_ext)]
 
+extern crate brdgme_color;
+
 pub mod ast;
+pub mod transform;
 peg_file! parser("parser.peg");
 
 use ast::Node;
@@ -29,8 +32,10 @@ mod tests {
 
     #[test]
     fn text_works() {
-        assert_eq!(parser::text("blah blah blah"), Ok(Node::Text("blah blah blah".to_string())));
-        assert_eq!(parser::text("{blah blah{ blah"), Ok(Node::Text("{blah blah{ blah".to_string())));
+        assert_eq!(parser::text("blah blah blah"),
+                   Ok(Node::Text("blah blah blah".to_string())));
+        assert_eq!(parser::text("{blah blah{ blah"),
+                   Ok(Node::Text("{blah blah{ blah".to_string())));
     }
 
     #[test]
@@ -53,7 +58,6 @@ mod tests {
                        Node::Text("!".to_string()),
                    ]));
         assert_eq!(parse("blah blah {blah"),
-                   Ok(vec![Node::Text("blah blah {blah".to_string())])
-        );
+                   Ok(vec![Node::Text("blah blah {blah".to_string())]));
     }
 }
