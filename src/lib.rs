@@ -5,6 +5,7 @@ extern crate brdgme_color;
 
 pub mod ast;
 pub mod transform;
+pub mod render;
 peg_file! parser("parser.peg");
 
 use ast::Node;
