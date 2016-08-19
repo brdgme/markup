@@ -2,11 +2,11 @@ use ast::Node;
 use std::collections::HashMap;
 use brdgme_color;
 
-type TransformFunc = Fn(Node) -> Result<Vec<Node>, String>;
+type TransformFunc = Fn(&Node) -> Result<Vec<Node>, String>;
 type TransformFuncs = HashMap<String, Box<TransformFunc>>;
 
-pub fn transform(input: Vec<Node>, funcs: TransformFuncs) -> Result<Vec<Node>, String> {
-    let mut remaining: Vec<Node> = input;
+pub fn transform(input: &Vec<Node>, funcs: TransformFuncs) -> Result<Vec<Node>, String> {
+    let mut remaining: Vec<Node> = input.clone();
     remaining.reverse();
     let mut ret: Vec<Node> = vec![];
     while let Some(n) = remaining.pop() {
@@ -14,7 +14,7 @@ pub fn transform(input: Vec<Node>, funcs: TransformFuncs) -> Result<Vec<Node>, S
             Node::Text(_) => ret.push(n),
             Node::Tag(ref name, _, _) => {
                 if let Some(f) = funcs.get(name) {
-                    ret.extend(try!(f(n.clone())));
+                    remaining.extend(try!(f(&n)));
                 } else {
                     ret.push(n.clone());
                 }
@@ -31,10 +31,10 @@ pub fn default_transform(players: Vec<String>) -> TransformFuncs {
     funcs
 }
 
-fn player_transform(node: Node, players: Vec<String>) -> Result<Vec<Node>, String> {
+fn player_transform(node: &Node, players: Vec<String>) -> Result<Vec<Node>, String> {
     match node {
-        Node::Text(_) => return Err("expected player tag, got text node".to_string()),
-        Node::Tag(_, ref tags, ref children) => {
+        &Node::Text(_) => return Err("expected player tag, got text node".to_string()),
+        &Node::Tag(_, ref tags, ref children) => {
             if children.len() > 0 {
                 return Err("player tag should not have children".to_string());
             }
@@ -69,7 +69,7 @@ mod tests {
 
     #[test]
     fn it_works() {
-        assert_eq!(transform(vec![Node::Tag("player".to_string(), vec!["1".to_string()], vec![])],
+        assert_eq!(transform(&vec![Node::Tag("player".to_string(), vec!["1".to_string()], vec![])],
                              default_transform(vec!["mick".to_string(), "steve".to_string()])),
                    Ok(parser::markup("{{#b}}{{#fg #d32f2f}}steve{{/fg}}{{/b}}").unwrap()));
     }

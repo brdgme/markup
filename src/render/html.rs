@@ -54,3 +54,7 @@ fn escape(input: &str) -> String {
         .replace("<", "&lt;")
         .replace(">", "&gt;")
 }
+
+pub fn render(input: &Vec<Node>) -> Result<String, String> {
+    super::render(input, &render_funcs(), Some(&render_text))
+}
