@@ -15,29 +15,15 @@ pub fn render_text(t: &str) -> Result<String, String> {
 }
 
 fn fg(n: &Node, content: &str) -> Result<String, String> {
-    match n {
-        &Node::Tag(_, ref args, _) => {
-            if args.len() != 1 {
-                return Err("fg requires one argument".to_string());
-            }
-            return Ok(format!(r#"<span style="color:{};">{}</span>"#, args[0], content));
-        }
-        _ => return Err("expected tag node".to_string()),
-    }
+    return Ok(format!(r#"<span style="color:{};">{}</span>"#,
+                      try!(super::parse_color_node(n)),
+                      content));
 }
 
 fn bg(n: &Node, content: &str) -> Result<String, String> {
-    match n {
-        &Node::Tag(_, ref args, _) => {
-            if args.len() != 1 {
-                return Err("bg requires one argument".to_string());
-            }
-            return Ok(format!(r#"<span style="background-color:{};">{}</span>"#,
-                              args[0],
-                              content));
-        }
-        _ => return Err("expected tag node".to_string()),
-    }
+    return Ok(format!(r#"<span style="background-color:{};">{}</span>"#,
+                      try!(super::parse_color_node(n)),
+                      content));
 }
 
 fn b(n: &Node, content: &str) -> Result<String, String> {
