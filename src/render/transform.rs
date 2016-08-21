@@ -5,7 +5,7 @@ use brdgme_color;
 type TransformFunc = Fn(&Node) -> Result<Vec<Node>, String>;
 type TransformFuncs = HashMap<String, Box<TransformFunc>>;
 
-pub fn transform(input: &Vec<Node>, funcs: TransformFuncs) -> Result<Vec<Node>, String> {
+pub fn transform(input: &Vec<Node>, funcs: &TransformFuncs) -> Result<Vec<Node>, String> {
     let mut remaining: Vec<Node> = input.clone();
     remaining.reverse();
     let mut ret: Vec<Node> = vec![];
@@ -24,7 +24,7 @@ pub fn transform(input: &Vec<Node>, funcs: TransformFuncs) -> Result<Vec<Node>, 
     Ok(ret)
 }
 
-pub fn default_transform(players: Vec<String>) -> TransformFuncs {
+pub fn default_transforms(players: Vec<String>) -> TransformFuncs {
     let mut funcs: TransformFuncs = HashMap::new();
     funcs.insert("player".to_string(),
                  Box::new(move |n| player_transform(n, players.clone())));
@@ -44,12 +44,13 @@ fn player_transform(node: &Node, players: Vec<String>) -> Result<Vec<Node>, Stri
             if let Ok(pnum) = tags[0].parse::<usize>() {
                 if pnum > players.len() {
                     return Err(format!("got player number {} but there are only {} players",
-                                        pnum,
-                                        players.len()));
+                                       pnum,
+                                       players.len()));
                 }
                 return Ok(vec![
                     Node::Tag("b".to_string(), vec![], vec![
-                        Node::Tag("fg".to_string(), vec![brdgme_color::player_color(pnum).hex()], vec![
+                        Node::Tag("fg".to_string(),
+                                  vec![brdgme_color::player_color(pnum).hex()], vec![
                             Node::Text(players[pnum].clone()),
                         ]),
                     ]),
@@ -69,8 +70,10 @@ mod tests {
 
     #[test]
     fn it_works() {
-        assert_eq!(transform(&vec![Node::Tag("player".to_string(), vec!["1".to_string()], vec![])],
-                             default_transform(vec!["mick".to_string(), "steve".to_string()])),
+        assert_eq!(transform(&vec![Node::Tag("player".to_string(),
+                                             vec!["1".to_string()],
+                                             vec![])],
+                             &default_transforms(vec!["mick".to_string(), "steve".to_string()])),
                    Ok(parser::markup("{{#b}}{{#fg #d32f2f}}steve{{/fg}}{{/b}}").unwrap()));
     }
 }

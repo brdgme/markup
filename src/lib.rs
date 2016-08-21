@@ -4,20 +4,25 @@
 extern crate brdgme_color;
 
 pub mod ast;
-pub mod transform;
 pub mod render;
+mod error;
 peg_file! parser("parser.peg");
 
 use ast::Node;
 use parser::ParseResult;
+use error::MarkupError;
 
 pub fn parse(input: &str) -> ParseResult<Vec<Node>> {
     parser::markup(input)
 }
 
+pub fn html(input: &str, players: Vec<String>) -> Result<String, MarkupError> {
+    render::html::render(input, players)
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{parse, parser};
+    use super::{parse, parser, html};
     use ast::Node;
 
     #[test]
@@ -60,5 +65,13 @@ mod tests {
                    ]));
         assert_eq!(parse("blah blah {blah"),
                    Ok(vec![Node::Text("blah blah {blah".to_string())]));
+    }
+
+    #[test]
+    fn html_works() {
+        println!("{}",
+                 html("Here is {{#b}}something{{/b}} for {{player 0}} and {{player 1}}",
+                      vec!["mick".to_string(), "steve".to_string()])
+                     .unwrap())
     }
 }

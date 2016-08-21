@@ -1,6 +1,9 @@
-use render::RenderFuncs;
 use std::collections::HashMap;
+
+use error::MarkupError;
+use render::{transform, RenderFuncs};
 use ast::Node;
+use parser::markup;
 
 pub fn render_funcs() -> RenderFuncs {
     let mut funcs: RenderFuncs = HashMap::new();
@@ -41,6 +44,17 @@ fn escape(input: &str) -> String {
         .replace(">", "&gt;")
 }
 
-pub fn render(input: &Vec<Node>) -> Result<String, String> {
-    super::render(input, &render_funcs(), Some(&render_text))
+pub fn render_nodes(input: &Vec<Node>, players: Vec<String>) -> Result<String, String> {
+    transform::transform(input, &transform::default_transforms(players))
+        .and_then(|nodes| super::render(&nodes, &render_funcs(), Some(&render_text)))
+}
+
+pub fn render(input: &str, players: Vec<String>) -> Result<String, MarkupError> {
+    render_nodes(&try!(markup(input)), players)
+        .map_err(|err| From::from(err))
+        .and_then(|content| {
+            Ok(format!(r#"<div style="background-color:#ffffff;color:#000000;white-space:pre-wrap;font-family:monospace;">{}</div>"#,
+                       content))
+        })
+
 }

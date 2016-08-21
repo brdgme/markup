@@ -2,6 +2,7 @@ use ast::Node;
 use std::collections::HashMap;
 use brdgme_color::Color;
 
+pub mod transform;
 pub mod html;
 pub mod ansi;
 

@@ -8,7 +8,7 @@ pub fn render_funcs() -> RenderFuncs {
     funcs
 }
 
-fn style(n: &Node, content: &str) -> Result<String, String> {
+fn style(_n: &Node, _content: &str) -> Result<String, String> {
     Err("not implemented".to_string())
 }
 
