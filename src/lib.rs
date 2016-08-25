@@ -20,6 +20,10 @@ pub fn html(input: &str, players: Vec<String>) -> Result<String, MarkupError> {
     render::html::render(input, players)
 }
 
+pub fn ansi(input: &str, players: Vec<String>) -> Result<String, MarkupError> {
+    render::ansi::render(input, players)
+}
+
 #[cfg(test)]
 mod tests {
     use super::{parse, parser, html};
