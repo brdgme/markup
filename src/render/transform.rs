@@ -51,7 +51,7 @@ fn player_transform(node: &Node, players: Vec<String>) -> Result<Vec<Node>, Stri
                     Node::Tag("b".to_string(), vec![], vec![
                         Node::Tag("fg".to_string(),
                                   vec![brdgme_color::player_color(pnum).hex()], vec![
-                            Node::Text(players[pnum].clone()),
+                            Node::Text(format!("• {}", players[pnum])),
                         ]),
                     ]),
                 ]);
