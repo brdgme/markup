@@ -74,6 +74,6 @@ mod tests {
                                              vec!["1".to_string()],
                                              vec![])],
                              &default_transforms(vec!["mick".to_string(), "steve".to_string()])),
-                   Ok(parser::markup("{{#b}}{{#fg #d32f2f}}steve{{/fg}}{{/b}}").unwrap()));
+                   Ok(parser::markup("{{#b}}{{#fg #d32f2f}}• steve{{/fg}}{{/b}}").unwrap()));
     }
 }
