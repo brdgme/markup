@@ -41,7 +41,9 @@ impl Node {
             &Node::Action(_, ref children) => children.clone(),
             &Node::Player(_) => vec![],
             &Node::Table(ref rows) => {
-                rows.iter().flat_map(|r| r.iter().flat_map(|c| c.children.clone())).collect()
+                rows.iter()
+                    .flat_map(|r| r.iter().flat_map(|&(_, ref children)| children.clone()))
+                    .collect()
             }
             &Node::Align(_, _, ref children) => children.clone(),
             &Node::Text(_) => vec![],
@@ -51,8 +53,4 @@ impl Node {
 
 pub type Row = Vec<Cell>;
 
-#[derive(PartialEq, Debug, Clone)]
-pub struct Cell {
-    pub align: Align,
-    pub children: Vec<Node>,
-}
+pub type Cell = (Align, Vec<Node>);

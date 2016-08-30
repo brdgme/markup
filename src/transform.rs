@@ -64,8 +64,8 @@ fn table(rows: &Vec<Row>, players: &Vec<String>) -> Result<Vec<Node>, String> {
         cols = cmp::max(cols, r.len());
         let mut row: Vec<Vec<Vec<Node>>> = vec![];
         let mut row_height: usize = 1;
-        for (i, c) in r.iter().enumerate() {
-            let cell_lines = try!(to_lines(&c.children, players));
+        for (i, &(_, ref children)) in r.iter().enumerate() {
+            let cell_lines = try!(to_lines(children, players));
             row_height = cmp::max(row_height, cell_lines.len());
             let width = cell_lines.iter().fold(0, |width, l| cmp::max(width, len(l)));
             if i >= widths.len() {
@@ -86,9 +86,9 @@ fn table(rows: &Vec<Row>, players: &Vec<String>) -> Result<Vec<Node>, String> {
                 output.push(Node::Text("\n".to_string()));
             }
             for ci in 0..cols {
-                if let Some(c) = r.get(ci) {
+                if let Some(&(ref align, _)) = r.get(ci) {
                     output.push(if transformed[ri][ci].len() > line_i {
-                        Node::Align(c.align.to_owned(),
+                        Node::Align(align.to_owned(),
                                     widths[ci],
                                     transformed[ri][ci][line_i].to_owned())
                     } else {

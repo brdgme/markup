@@ -58,10 +58,7 @@ row -> Row
 
 cell -> Cell
   = "{{#cell" align:tag_arg_align? "}}" children:node* "{{/cell}}" [ \n]* {
-    Cell {
-      align: align.unwrap_or(Align::Left),
-      children: children,
-    }
+    (align.unwrap_or(Align::Left), children)
   }
 
 align -> Node
