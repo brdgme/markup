@@ -9,11 +9,14 @@ not_quote -> String
   = [^"]+ { match_str.to_string() }
 
 tag_arg -> String
-  = " "+ "\"" a:not_quote "\"" { a }
-  / " "+ a:tag_word { a }
+  = "\"" a:not_quote "\"" { a }
+  / a:tag_word { a }
+
+space
+  = [ \n]+
 
 tag_arg_usize -> usize
-  = " "+ [0-9]+ {?
+  = [0-9]+ {?
     match usize::from_str(match_str) {
       Ok(n) => Ok(n),
       Err(_) => Err("expected positive integer"),
@@ -29,7 +32,7 @@ tag_arg_align -> Align
   }
 
 fg -> Node
-  = "{{#fg" a:tag_arg "}}" children:node* "{{/fg}}" {?
+  = "{{#fg" space a:tag_arg "}}" children:node* "{{/fg}}" {?
     match Color::from_str(&a) {
       Ok(c) => Ok(Node::Fg(c, children)),
       Err(e) => Err("invalid color"),
@@ -37,7 +40,7 @@ fg -> Node
   }
 
 bg -> Node
-  = "{{#bg" a:tag_arg "}}" children:node* "{{/bg}}" {?
+  = "{{#bg" space a:tag_arg "}}" children:node* "{{/bg}}" {?
     match Color::from_str(&a) {
       Ok(c) => Ok(Node::Bg(c, children)),
       Err(e) => Err("invalid color"),
@@ -48,26 +51,26 @@ bold -> Node
   = "{{#b}}" children:node* "{{/b}}" { Node::Bold(children) }
 
 action -> Node
-  = "{{#action" a:tag_arg "}}" children:node* "{{/action}}" { Node::Action(a, children) }
+  = "{{#action" space a:tag_arg "}}" children:node* "{{/action}}" { Node::Action(a, children) }
 
 table -> Node
-  = "{{#table}}" [ \n]* rows:row* "{{/table}}" { Node::Table(rows) }
+  = "{{#table}}" space? rows:row* "{{/table}}" { Node::Table(rows) }
 
 row -> Row
-  = "{{#row}}" cells:cell* "{{/row}}" [ \n]* { cells }
+  = "{{#row}}" cells:cell* "{{/row}}" space? { cells }
 
 cell -> Cell
-  = "{{#cell" align:tag_arg_align? "}}" children:node* "{{/cell}}" [ \n]* {
+  = "{{#cell" align:tag_arg_align? "}}" children:node* "{{/cell}}" space? {
     (align.unwrap_or(Align::Left), children)
   }
 
 align -> Node
-  = "{{#align" a:tag_arg_align w:tag_arg_usize "}}" children:node* "{{/align}}" {
+  = "{{#align" space a:tag_arg_align space w:tag_arg_usize "}}" children:node* "{{/align}}" {
     Node::Align(a, w, children)
   }
 
 player -> Node
-  = "{{player" p:tag_arg_usize "}}" { Node::Player(p) }
+  = "{{player" space p:tag_arg_usize "}}" { Node::Player(p) }
 
 #[pub]
 node -> Node
