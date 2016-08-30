@@ -24,7 +24,13 @@ pub fn transform(input: &Vec<Node>, players: &Vec<String>) -> Result<Vec<Node>, 
                 t.reverse();
                 remaining.extend(t);
             }
-            _ => ret.push(n),
+            Node::Fg(c, children) => ret.push(Node::Fg(c, try!(transform(&children, players)))),
+            Node::Bg(c, children) => ret.push(Node::Bg(c, try!(transform(&children, players)))),
+            Node::Bold(children) => ret.push(Node::Bold(try!(transform(&children, players)))),
+            Node::Action(a, children) => {
+                ret.push(Node::Action(a, try!(transform(&children, players))))
+            }
+            Node::Text(_) => ret.push(n),
         }
     }
     Ok(ret)
