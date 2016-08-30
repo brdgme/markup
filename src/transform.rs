@@ -53,9 +53,11 @@ fn table(rows: &Vec<Row>, players: &Vec<String>) -> Result<Vec<Node>, String> {
     let mut transformed: Vec<Vec<Vec<Vec<Node>>>> = vec![];
     let mut widths: Vec<usize> = vec![];
     let mut heights: Vec<usize> = vec![];
+    let mut cols: usize = 0;
     for r in rows {
+        cols = cmp::max(cols, r.len());
         let mut row: Vec<Vec<Vec<Node>>> = vec![];
-        let mut row_height: usize = 0;
+        let mut row_height: usize = 1;
         for (i, c) in r.iter().enumerate() {
             let cell_lines = try!(to_lines(&c.children, players));
             row_height = cmp::max(row_height, cell_lines.len());
@@ -77,14 +79,18 @@ fn table(rows: &Vec<Row>, players: &Vec<String>) -> Result<Vec<Node>, String> {
             if ri > 0 || line_i > 0 {
                 output.push(Node::Text("\n".to_string()));
             }
-            for (ci, c) in r.iter().enumerate() {
-                output.push(if transformed[ri][ci].len() > line_i {
-                    Node::Align(c.align.to_owned(),
-                                widths[ci],
-                                transformed[ri][ci][line_i].to_owned())
+            for ci in 0..cols {
+                if let Some(c) = r.get(ci) {
+                    output.push(if transformed[ri][ci].len() > line_i {
+                        Node::Align(c.align.to_owned(),
+                                    widths[ci],
+                                    transformed[ri][ci][line_i].to_owned())
+                    } else {
+                        Node::Align(Align::Left, widths[ci], vec![])
+                    });
                 } else {
-                    Node::Align(Align::Left, widths[ci], vec![])
-                });
+                    output.push(Node::Align(Align::Left, widths[ci], vec![]));
+                }
             }
         }
     }
@@ -105,10 +111,10 @@ fn align(a: Align,
         let diff = cmp::max(width, l_len) - l_len;
         match a {
             Align::Left => {
+                aligned.extend(l);
                 if diff > 0 {
-                    aligned.extend(l);
+                    aligned.push(Node::Text(iter::repeat(" ").take(diff).collect()));
                 }
-                aligned.push(Node::Text(iter::repeat(" ").take(diff).collect()));
             }
             Align::Center => {
                 let before = diff / 2;
@@ -122,10 +128,10 @@ fn align(a: Align,
                 }
             }
             Align::Right => {
-                aligned.push(Node::Text(iter::repeat(" ").take(diff).collect()));
                 if diff > 0 {
-                    aligned.extend(l);
+                    aligned.push(Node::Text(iter::repeat(" ").take(diff).collect()));
                 }
+                aligned.extend(l);
             }
         }
     }
