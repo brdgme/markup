@@ -3,7 +3,7 @@ use brdgme_color::player_color;
 use std::cmp;
 use std::iter;
 
-pub fn transform(input: &Vec<Node>, players: &Vec<String>) -> Result<Vec<Node>, String> {
+pub fn transform(input: &Vec<Node>, players: &Vec<&str>) -> Result<Vec<Node>, String> {
     let mut remaining: Vec<Node> = input.clone();
     remaining.reverse();
     let mut ret: Vec<Node> = vec![];
@@ -36,7 +36,7 @@ pub fn transform(input: &Vec<Node>, players: &Vec<String>) -> Result<Vec<Node>, 
     Ok(ret)
 }
 
-fn player(p: usize, players: &Vec<String>) -> Result<Vec<Node>, String> {
+fn player(p: usize, players: &Vec<&str>) -> Result<Vec<Node>, String> {
     let p_len = players.len();
     if p >= p_len {
         return Err(format!(
@@ -54,7 +54,7 @@ fn player(p: usize, players: &Vec<String>) -> Result<Vec<Node>, String> {
     ])
 }
 
-fn table(rows: &Vec<Row>, players: &Vec<String>) -> Result<Vec<Node>, String> {
+fn table(rows: &Vec<Row>, players: &Vec<&str>) -> Result<Vec<Node>, String> {
     // Transform individual cells and calculate row heights and column widths.
     let mut transformed: Vec<Vec<Vec<Vec<Node>>>> = vec![];
     let mut widths: Vec<usize> = vec![];
@@ -106,7 +106,7 @@ fn table(rows: &Vec<Row>, players: &Vec<String>) -> Result<Vec<Node>, String> {
 fn align(a: Align,
          width: usize,
          children: &Vec<Node>,
-         players: &Vec<String>)
+         players: &Vec<&str>)
          -> Result<Vec<Node>, String> {
     let mut aligned: Vec<Node> = vec![];
     for l in try!(to_lines(children, players)) {
@@ -156,7 +156,7 @@ fn len(nodes: &Vec<Node>) -> usize {
 
 /// `to_lines` splits text nodes into multiple text nodes, duplicating parent
 /// nodes as necessary.
-fn to_lines(nodes: &Vec<Node>, players: &Vec<String>) -> Result<Vec<Vec<Node>>, String> {
+fn to_lines(nodes: &Vec<Node>, players: &Vec<&str>) -> Result<Vec<Vec<Node>>, String> {
     let mut lines: Vec<Vec<Node>> = vec![];
     let transformed = try!(transform(nodes, players));
     let mut line: Vec<Node> = vec![];
@@ -213,8 +213,7 @@ mod tests {
 
     #[test]
     fn it_works() {
-        assert_eq!(transform(&vec![Node::Player(1)],
-                             &vec!["mick".to_string(), "steve".to_string()]),
+        assert_eq!(transform(&vec![Node::Player(1)], &vec!["mick", "steve"]),
                    Ok(parser::markup("{{#b}}{{#fg #d32f2f}}• steve{{/fg}}{{/b}}").unwrap()));
 
     }
