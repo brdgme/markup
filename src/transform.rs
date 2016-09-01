@@ -47,7 +47,7 @@ fn player(p: usize, players: &Vec<String>) -> Result<Vec<Node>, String> {
     }
     Ok(vec![
         Node::Bold(vec![
-            Node::Fg(player_color(p), vec![
+            Node::Fg(player_color(p).to_owned(), vec![
                 Node::Text(format!("• {}", players[p])),
             ]),
         ]),

@@ -23,13 +23,13 @@ fn render_styled(input: &Vec<Node>, last_style: Style) -> Result<String, MarkupE
         match n {
             &Node::Text(ref t) => buf.push_str(t),
             &Node::Fg(ref color, ref children) => {
-                let new_style = Style { fg: color.to_owned(), ..last_style };
+                let new_style = Style { fg: color, ..last_style };
                 buf.push_str(&new_style.ansi());
                 buf.push_str(&try!(render_styled(children, new_style)));
                 buf.push_str(&last_style.ansi());
             }
             &Node::Bg(ref color, ref children) => {
-                let new_style = Style { bg: color.to_owned(), ..last_style };
+                let new_style = Style { bg: color, ..last_style };
                 buf.push_str(&new_style.ansi());
                 buf.push_str(&try!(render_styled(children, new_style)));
                 buf.push_str(&last_style.ansi());
