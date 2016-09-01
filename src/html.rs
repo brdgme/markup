@@ -23,7 +23,7 @@ fn escape(input: &str) -> String {
         .replace(">", "&gt;")
 }
 
-pub fn render(input: &Vec<Node>, players: &Vec<&str>) -> Result<String, MarkupError> {
+pub fn render(input: &Vec<Node>, players: &Vec<String>) -> Result<String, MarkupError> {
     transform::transform(input, players)
         .map_err(|err| From::from(err))
         .and_then(|nodes| render_nodes(&nodes))

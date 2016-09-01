@@ -3,7 +3,7 @@ use ast::Node;
 use brdgme_color::Style;
 use error::MarkupError;
 
-pub fn render(input: &Vec<Node>, players: &Vec<&str>) -> Result<String, MarkupError> {
+pub fn render(input: &Vec<Node>, players: &Vec<String>) -> Result<String, MarkupError> {
     let default_style = Style::default();
     transform::transform(input, players)
         .map_err(|err| From::from(err))

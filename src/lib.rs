@@ -18,11 +18,11 @@ pub fn parse(input: &str) -> ParseResult<Vec<Node>> {
     parser::markup(input)
 }
 
-pub fn html(input: &Vec<Node>, players: &Vec<&str>) -> Result<String, MarkupError> {
+pub fn html(input: &Vec<Node>, players: &Vec<String>) -> Result<String, MarkupError> {
     html::render(input, players)
 }
 
-pub fn ansi(input: &Vec<Node>, players: &Vec<&str>) -> Result<String, MarkupError> {
+pub fn ansi(input: &Vec<Node>, players: &Vec<String>) -> Result<String, MarkupError> {
     ansi::render(input, players)
 }
 
@@ -65,14 +65,14 @@ mod tests {
     #[test]
     fn ansi_works() {
         ansi(&parse("Here is {{#b}}something{{/b}} for {{player 0}} and {{player 1}}").unwrap(),
-             &vec!["mick", "steve"])
+             &vec!["mick".to_string(), "steve".to_string()])
             .unwrap();
     }
 
     #[test]
     fn html_works() {
         html(&parse("Here is {{#b}}something{{/b}} for {{player 0}} and {{player 1}}").unwrap(),
-             &vec!["mick", "steve"])
+             &vec!["mick".to_string(), "steve".to_string()])
             .unwrap();
     }
 }
