@@ -18,11 +18,11 @@ pub fn parse(input: &str) -> ParseResult<Vec<Node>> {
     parser::markup(input)
 }
 
-pub fn html(input: &Vec<Node>, players: &Vec<String>) -> Result<String, MarkupError> {
+pub fn html(input: &[Node], players: &[String]) -> Result<String, MarkupError> {
     html::render(input, players)
 }
 
-pub fn ansi(input: &Vec<Node>, players: &Vec<String>) -> Result<String, MarkupError> {
+pub fn ansi(input: &[Node], players: &[String]) -> Result<String, MarkupError> {
     ansi::render(input, players)
 }
 

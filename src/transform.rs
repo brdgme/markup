@@ -3,8 +3,8 @@ use brdgme_color::player_color;
 use std::cmp;
 use std::iter;
 
-pub fn transform(input: &Vec<Node>, players: &Vec<String>) -> Result<Vec<Node>, String> {
-    let mut remaining: Vec<Node> = input.clone();
+pub fn transform(input: &[Node], players: &[String]) -> Result<Vec<Node>, String> {
+    let mut remaining: Vec<Node> = input.to_owned();
     remaining.reverse();
     let mut ret: Vec<Node> = vec![];
     while let Some(n) = remaining.pop() {
@@ -36,7 +36,7 @@ pub fn transform(input: &Vec<Node>, players: &Vec<String>) -> Result<Vec<Node>, 
     Ok(ret)
 }
 
-fn player(p: usize, players: &Vec<String>) -> Result<Vec<Node>, String> {
+fn player(p: usize, players: &[String]) -> Result<Vec<Node>, String> {
     let p_len = players.len();
     if p >= p_len {
         return Err(format!(
@@ -54,14 +54,12 @@ fn player(p: usize, players: &Vec<String>) -> Result<Vec<Node>, String> {
     ])
 }
 
-fn table(rows: &Vec<Row>, players: &Vec<String>) -> Result<Vec<Node>, String> {
+fn table(rows: &[Row], players: &[String]) -> Result<Vec<Node>, String> {
     // Transform individual cells and calculate row heights and column widths.
     let mut transformed: Vec<Vec<Vec<Vec<Node>>>> = vec![];
     let mut widths: Vec<usize> = vec![];
     let mut heights: Vec<usize> = vec![];
-    let mut cols: usize = 0;
     for r in rows {
-        cols = cmp::max(cols, r.len());
         let mut row: Vec<Vec<Vec<Node>>> = vec![];
         let mut row_height: usize = 1;
         for (i, &(_, ref children)) in r.iter().enumerate() {
@@ -85,12 +83,10 @@ fn table(rows: &Vec<Row>, players: &Vec<String>) -> Result<Vec<Node>, String> {
             if ri > 0 || line_i > 0 {
                 output.push(Node::Text("\n".to_string()));
             }
-            for ci in 0..cols {
+            for (ci, w) in widths.iter().enumerate() {
                 if let Some(&(ref align, _)) = r.get(ci) {
                     output.push(if transformed[ri][ci].len() > line_i {
-                        Node::Align(align.to_owned(),
-                                    widths[ci],
-                                    transformed[ri][ci][line_i].to_owned())
+                        Node::Align(align.to_owned(), *w, transformed[ri][ci][line_i].to_owned())
                     } else {
                         Node::Align(Align::Left, widths[ci], vec![])
                     });
@@ -105,12 +101,12 @@ fn table(rows: &Vec<Row>, players: &Vec<String>) -> Result<Vec<Node>, String> {
 
 fn align(a: Align,
          width: usize,
-         children: &Vec<Node>,
-         players: &Vec<String>)
+         children: &[Node],
+         players: &[String])
          -> Result<Vec<Node>, String> {
     let mut aligned: Vec<Node> = vec![];
     for l in try!(to_lines(children, players)) {
-        if aligned.len() > 0 {
+        if !aligned.is_empty() {
             aligned.push(Node::Text("\n".to_string()));
         }
         let l_len = len(&l);
@@ -144,11 +140,11 @@ fn align(a: Align,
     Ok(aligned)
 }
 
-fn len(nodes: &Vec<Node>) -> usize {
+fn len(nodes: &[Node]) -> usize {
     nodes.iter().fold(0, |sum, n| {
         sum +
-        match n {
-            &Node::Text(ref text) => text.len(),
+        match *n {
+            Node::Text(ref text) => text.len(),
             _ => len(&n.children()),
         }
     })
@@ -156,7 +152,7 @@ fn len(nodes: &Vec<Node>) -> usize {
 
 /// `to_lines` splits text nodes into multiple text nodes, duplicating parent
 /// nodes as necessary.
-fn to_lines(nodes: &Vec<Node>, players: &Vec<String>) -> Result<Vec<Vec<Node>>, String> {
+fn to_lines(nodes: &[Node], players: &[String]) -> Result<Vec<Vec<Node>>, String> {
     let mut lines: Vec<Vec<Node>> = vec![];
     let transformed = try!(transform(nodes, players));
     let mut line: Vec<Node> = vec![];
@@ -186,7 +182,7 @@ fn to_lines(nodes: &Vec<Node>, players: &Vec<String>) -> Result<Vec<Vec<Node>>, 
                     .map(|l| vec![Node::Action(action.to_owned(), l.to_owned())])
                     .collect()
             }
-            Node::Text(text) => text.split("\n").map(|l| vec![Node::Text(l.to_owned())]).collect(),
+            Node::Text(text) => text.split('\n').map(|l| vec![Node::Text(l.to_owned())]).collect(),
             _ => return Err(format!("invalid node to reduce to lines {:?}", n)),
         };
         let n_lines_len = n_lines.len();
@@ -194,8 +190,8 @@ fn to_lines(nodes: &Vec<Node>, players: &Vec<String>) -> Result<Vec<Vec<Node>>, 
             line.extend(n_lines[0].to_owned());
             if n_lines_len > 1 {
                 lines.push(line);
-                for i in 1..(n_lines_len - 1) {
-                    lines.push(n_lines[i].to_owned());
+                for l in n_lines.iter().skip(1) {
+                    lines.push(l.to_owned());
                 }
                 line = n_lines[n_lines_len - 1].to_owned();
             }

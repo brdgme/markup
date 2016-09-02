@@ -34,19 +34,19 @@ pub enum Node {
 
 impl Node {
     pub fn children(&self) -> Vec<Node> {
-        match self {
-            &Node::Fg(_, ref children) => children.clone(),
-            &Node::Bg(_, ref children) => children.clone(),
-            &Node::Bold(ref children) => children.clone(),
-            &Node::Action(_, ref children) => children.clone(),
-            &Node::Player(_) => vec![],
-            &Node::Table(ref rows) => {
+        match *self {
+            Node::Fg(_, ref children) |
+            Node::Bg(_, ref children) |
+            Node::Bold(ref children) |
+            Node::Action(_, ref children) |
+            Node::Align(_, _, ref children) => children.clone(),
+            Node::Player(_) => vec![],
+            Node::Table(ref rows) => {
                 rows.iter()
                     .flat_map(|r| r.iter().flat_map(|&(_, ref children)| children.clone()))
                     .collect()
             }
-            &Node::Align(_, _, ref children) => children.clone(),
-            &Node::Text(_) => vec![],
+            Node::Text(_) => vec![],
         }
     }
 }

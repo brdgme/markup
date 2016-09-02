@@ -23,9 +23,9 @@ fn escape(input: &str) -> String {
         .replace(">", "&gt;")
 }
 
-pub fn render(input: &Vec<Node>, players: &Vec<String>) -> Result<String, MarkupError> {
+pub fn render(input: &[Node], players: &[String]) -> Result<String, MarkupError> {
     transform::transform(input, players)
-        .map_err(|err| From::from(err))
+        .map_err(From::from)
         .and_then(|nodes| render_nodes(&nodes))
         .map(|output| {
             format!(
@@ -40,18 +40,18 @@ font-family:monospace;\
         })
 }
 
-fn render_nodes(input: &Vec<Node>) -> Result<String, MarkupError> {
+fn render_nodes(input: &[Node]) -> Result<String, MarkupError> {
     let mut buf = String::new();
     for n in input {
-        match n {
-            &Node::Text(ref t) => buf.push_str(&escape(t)),
-            &Node::Fg(ref color, ref children) => {
+        match *n {
+            Node::Text(ref t) => buf.push_str(&escape(t)),
+            Node::Fg(ref color, ref children) => {
                 buf.push_str(&fg(color, &try!(render_nodes(children))))
             }
-            &Node::Bg(ref color, ref children) => {
+            Node::Bg(ref color, ref children) => {
                 buf.push_str(&bg(color, &try!(render_nodes(children))))
             }
-            &Node::Bold(ref children) => buf.push_str(&b(&try!(render_nodes(children)))),
+            Node::Bold(ref children) => buf.push_str(&b(&try!(render_nodes(children)))),
             _ => return Err(MarkupError::Render(format!("unknown node {:?}", n))),
         }
     }
