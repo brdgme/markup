@@ -4,7 +4,4 @@ version = "0.1.0"
 authors = ["mick"]
 
 [dependencies]
-log = "^0.3.6"
-env_logger = "^0.3.4"
-peg = "^0.3.0"
 brdgme-color = { path = "../color" }

@@ -205,15 +205,6 @@ fn to_lines(nodes: &[Node], players: &[String]) -> Result<Vec<Vec<Node>>, String
 mod tests {
     use super::*;
     use ast::{Node, Align};
-    use parser;
-
-    #[test]
-    fn it_works() {
-        assert_eq!(transform(&vec![Node::Player(1)],
-                             &vec!["mick".to_string(), "steve".to_string()]),
-                   Ok(parser::markup("{{#b}}{{#fg #d32f2f}}• steve{{/fg}}{{/b}}").unwrap()));
-
-    }
 
     #[test]
     fn align_works() {
