@@ -48,7 +48,7 @@ fn player(p: usize, players: &[String]) -> Result<Vec<Node>, String> {
     Ok(vec![
         Node::Bold(vec![
             Node::Fg(player_color(p).to_owned(), vec![
-                Node::Text(format!("• {}", players[p])),
+                Node::text(format!("• {}", players[p])),
             ]),
         ]),
     ])
@@ -81,7 +81,7 @@ fn table(rows: &[Row], players: &[String]) -> Result<Vec<Node>, String> {
     for (ri, r) in rows.iter().enumerate() {
         for line_i in 0..heights[ri] {
             if ri > 0 || line_i > 0 {
-                output.push(Node::Text("\n".to_string()));
+                output.push(Node::text("\n"));
             }
             for (ci, w) in widths.iter().enumerate() {
                 if let Some(&(ref align, _)) = r.get(ci) {
@@ -107,7 +107,7 @@ fn align(a: Align,
     let mut aligned: Vec<Node> = vec![];
     for l in try!(to_lines(children, players)) {
         if !aligned.is_empty() {
-            aligned.push(Node::Text("\n".to_string()));
+            aligned.push(Node::text("\n"));
         }
         let l_len = len(&l);
         let diff = cmp::max(width, l_len) - l_len;
@@ -182,7 +182,7 @@ fn to_lines(nodes: &[Node], players: &[String]) -> Result<Vec<Vec<Node>>, String
                     .map(|l| vec![Node::Action(action.to_owned(), l.to_owned())])
                     .collect()
             }
-            Node::Text(text) => text.split('\n').map(|l| vec![Node::Text(l.to_owned())]).collect(),
+            Node::Text(text) => text.split('\n').map(|l| vec![Node::text(l)]).collect(),
             _ => return Err(format!("invalid node to reduce to lines {:?}", n)),
         };
         let n_lines_len = n_lines.len();
@@ -208,30 +208,24 @@ mod tests {
 
     #[test]
     fn align_works() {
-        assert_eq!(transform(&vec![Node::Align(Align::Left,
-                                               10,
-                                               vec![Node::Text("abc".to_string())])],
+        assert_eq!(transform(&vec![Node::Align(Align::Left, 10, vec![Node::text("abc")])],
                              &vec![]),
                    Ok(vec![
-                       Node::Text("abc".to_string()),
-                       Node::Text("       ".to_string()),
+                       Node::text("abc"),
+                       Node::text("       "),
                    ]));
-        assert_eq!(transform(&vec![Node::Align(Align::Center,
-                                               10,
-                                               vec![Node::Text("abc".to_string())])],
+        assert_eq!(transform(&vec![Node::Align(Align::Center, 10, vec![Node::text("abc")])],
                              &vec![]),
                    Ok(vec![
-                       Node::Text("   ".to_string()),
-                       Node::Text("abc".to_string()),
-                       Node::Text("    ".to_string()),
+                       Node::text("   "),
+                       Node::text("abc"),
+                       Node::text("    "),
                    ]));
-        assert_eq!(transform(&vec![Node::Align(Align::Right,
-                                               10,
-                                               vec![Node::Text("abc".to_string())])],
+        assert_eq!(transform(&vec![Node::Align(Align::Right, 10, vec![Node::text("abc")])],
                              &vec![]),
                    Ok(vec![
-                       Node::Text("       ".to_string()),
-                       Node::Text("abc".to_string()),
+                       Node::text("       "),
+                       Node::text("abc"),
                    ]));
     }
 }

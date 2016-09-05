@@ -40,14 +40,19 @@ impl Node {
             Node::Bold(ref children) |
             Node::Action(_, ref children) |
             Node::Align(_, _, ref children) => children.clone(),
-            Node::Player(_) => vec![],
             Node::Table(ref rows) => {
                 rows.iter()
                     .flat_map(|r| r.iter().flat_map(|&(_, ref children)| children.clone()))
                     .collect()
             }
-            Node::Text(_) => vec![],
+            Node::Text(_) | Node::Player(_) => vec![],
         }
+    }
+
+    pub fn text<T>(t: T) -> Node
+        where T: Into<String>
+    {
+        Node::Text(t.into())
     }
 }
 

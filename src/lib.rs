@@ -24,13 +24,13 @@ mod tests {
 
     #[test]
     fn ansi_works() {
-        ansi(&[N::Text("Here is ".to_string()),
+        ansi(&[N::text("Here is "),
                N::Bold(vec![
-                N::Text("something".to_string()),
+                N::text("something"),
             ]),
-               N::Text(" for ".to_string()),
+               N::text(" for "),
                N::Player(0),
-               N::Text(" and ".to_string()),
+               N::text(" and "),
                N::Player(1)],
              &vec!["mick".to_string(), "steve".to_string()])
             .unwrap();
@@ -38,13 +38,13 @@ mod tests {
 
     #[test]
     fn html_works() {
-        html(&[N::Text("Here is ".to_string()),
+        html(&[N::text("Here is "),
                N::Bold(vec![
-                   N::Text("something".to_string()),
+                   N::text("something"),
                ]),
-               N::Text(" for ".to_string()),
+               N::text(" for "),
                N::Player(0),
-               N::Text(" and ".to_string()),
+               N::text(" and "),
                N::Player(1)],
              &vec!["mick".to_string(), "steve".to_string()])
             .unwrap();
