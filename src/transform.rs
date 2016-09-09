@@ -152,7 +152,7 @@ fn len(nodes: &[Node]) -> usize {
 
 /// `to_lines` splits text nodes into multiple text nodes, duplicating parent
 /// nodes as necessary.
-fn to_lines(nodes: &[Node], players: &[String]) -> Result<Vec<Vec<Node>>, String> {
+pub fn to_lines(nodes: &[Node], players: &[String]) -> Result<Vec<Vec<Node>>, String> {
     let mut lines: Vec<Vec<Node>> = vec![];
     let transformed = try!(transform(nodes, players));
     let mut line: Vec<Node> = vec![];
@@ -190,7 +190,7 @@ fn to_lines(nodes: &[Node], players: &[String]) -> Result<Vec<Vec<Node>>, String
             line.extend(n_lines[0].to_owned());
             if n_lines_len > 1 {
                 lines.push(line);
-                for l in n_lines.iter().skip(1) {
+                for l in n_lines.iter().take(n_lines_len - 1).skip(1) {
                     lines.push(l.to_owned());
                 }
                 line = n_lines[n_lines_len - 1].to_owned();
@@ -204,28 +204,53 @@ fn to_lines(nodes: &[Node], players: &[String]) -> Result<Vec<Vec<Node>>, String
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ast::{Node, Align};
+    use ansi::render;
+    use ast::{Node as N, Align as A};
 
     #[test]
     fn align_works() {
-        assert_eq!(transform(&vec![Node::Align(Align::Left, 10, vec![Node::text("abc")])],
+        assert_eq!(transform(&vec![N::Align(A::Left, 10, vec![N::text("abc")])], &vec![]),
+                   Ok(vec![
+                       N::text("abc"),
+                       N::text("       "),
+                   ]));
+        assert_eq!(transform(&vec![N::Align(A::Center, 10, vec![N::text("abc")])],
                              &vec![]),
                    Ok(vec![
-                       Node::text("abc"),
-                       Node::text("       "),
+                       N::text("   "),
+                       N::text("abc"),
+                       N::text("    "),
                    ]));
-        assert_eq!(transform(&vec![Node::Align(Align::Center, 10, vec![Node::text("abc")])],
-                             &vec![]),
+        assert_eq!(transform(&vec![N::Align(A::Right, 10, vec![N::text("abc")])], &vec![]),
                    Ok(vec![
-                       Node::text("   "),
-                       Node::text("abc"),
-                       Node::text("    "),
+                       N::text("       "),
+                       N::text("abc"),
                    ]));
-        assert_eq!(transform(&vec![Node::Align(Align::Right, 10, vec![Node::text("abc")])],
-                             &vec![]),
+    }
+
+    #[test]
+    fn table_in_table_works() {
+        let t = transform(&vec![N::Table(vec![
+            vec![(A::Left, vec![N::text("one")])],
+            vec![(A::Left, vec![N::text("two")])],
+            vec![(A::Left, vec![N::text("three")])],
+            ])],
+                          &vec![])
+            .unwrap();
+        assert_eq!(render(&t, &vec![]).unwrap(),
+                   render(&vec![N::Table(vec![
+                vec![(A::Left, t.clone())],
+                ])],
+                          &vec![])
+                       .unwrap());
+    }
+
+    #[test]
+    fn to_lines_works() {
+        assert_eq!(to_lines(&vec![N::text("one\ntwo")], &vec![]),
                    Ok(vec![
-                       Node::text("       "),
-                       Node::text("abc"),
-                   ]));
+            vec![N::text("one")],
+            vec![N::text("two")],
+            ]));
     }
 }
