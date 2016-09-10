@@ -204,7 +204,8 @@ pub fn to_lines(nodes: &[Node], players: &[String]) -> Result<Vec<Vec<Node>>, St
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ansi::render;
+    use brdgme_color::*;
+    use plain::render;
     use ast::{Node as N, Align as A};
 
     #[test]
@@ -226,6 +227,28 @@ mod tests {
                        N::text("       "),
                        N::text("abc"),
                    ]));
+    }
+
+    #[test]
+    fn table_align_works() {
+        assert_eq!(Ok("           blah     \nheadersome long text".to_string()), render(&vec![
+            N::Table(vec![
+                vec![
+                    (A::Left, vec![]),
+                    (A::Center, vec![
+                        N::Fg(GREY, vec![N::text("blah")]),
+                    ]),
+                ],
+                vec![
+                    (A::Right, vec![
+                        N::text("header"),
+                    ]),
+                    (A::Center, vec![
+                        N::text("some long text"),
+                    ]),
+                ],
+            ]),
+        ], &vec![]));
     }
 
     #[test]

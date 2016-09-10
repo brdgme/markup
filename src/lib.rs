@@ -5,6 +5,7 @@ mod error;
 mod transform;
 mod ansi;
 mod html;
+mod plain;
 
 use ast::Node;
 use error::MarkupError;
@@ -15,6 +16,10 @@ pub fn html(input: &[Node], players: &[String]) -> Result<String, MarkupError> {
 
 pub fn ansi(input: &[Node], players: &[String]) -> Result<String, MarkupError> {
     ansi::render(input, players)
+}
+
+pub fn plain(input: &[Node], players: &[String]) -> Result<String, MarkupError> {
+    plain::render(input, players)
 }
 
 #[cfg(test)]
