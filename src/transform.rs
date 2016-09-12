@@ -144,7 +144,7 @@ fn len(nodes: &[Node]) -> usize {
     nodes.iter().fold(0, |sum, n| {
         sum +
         match *n {
-            Node::Text(ref text) => text.len(),
+            Node::Text(ref text) => text.chars().count(),
             _ => len(&n.children()),
         }
     })
@@ -231,7 +231,8 @@ mod tests {
 
     #[test]
     fn table_align_works() {
-        assert_eq!(Ok("           blah     \nheadersome long text".to_string()), render(&vec![
+        assert_eq!(Ok("           blah     \nheadersome long text".to_string()),
+                   render(&vec![
             N::Table(vec![
                 vec![
                     (A::Left, vec![]),
@@ -248,7 +249,8 @@ mod tests {
                     ]),
                 ],
             ]),
-        ], &vec![]));
+        ],
+                          &vec![]));
     }
 
     #[test]
