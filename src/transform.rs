@@ -31,6 +31,9 @@ pub fn transform(input: &[Node], players: &[String]) -> Result<Vec<Node>, String
                 ret.push(Node::Action(a, try!(transform(&children, players))))
             }
             Node::Text(_) => ret.push(n),
+            Node::Group(children) => {
+                remaining.extend(children.into_iter().rev().collect::<Vec<Node>>());
+            }
         }
     }
     Ok(ret)

@@ -30,6 +30,7 @@ pub enum Node {
     Table(Vec<Row>),
     Align(Align, usize, Vec<Node>),
     Text(String),
+    Group(Vec<Node>),
 }
 
 impl Node {
@@ -39,7 +40,8 @@ impl Node {
             Node::Bg(_, ref children) |
             Node::Bold(ref children) |
             Node::Action(_, ref children) |
-            Node::Align(_, _, ref children) => children.clone(),
+            Node::Align(_, _, ref children) |
+            Node::Group(ref children) => children.clone(),
             Node::Table(ref rows) => {
                 rows.iter()
                     .flat_map(|r| r.iter().flat_map(|&(_, ref children)| children.clone()))
