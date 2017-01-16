@@ -30,9 +30,7 @@ mod tests {
     #[test]
     fn ansi_works() {
         ansi(&[N::text("Here is "),
-               N::Bold(vec![
-                N::text("something"),
-            ]),
+               N::Bold(vec![N::text("something")]),
                N::text(" for "),
                N::Player(0),
                N::text(" and "),
@@ -44,9 +42,7 @@ mod tests {
     #[test]
     fn html_works() {
         html(&[N::text("Here is "),
-               N::Bold(vec![
-                   N::text("something"),
-               ]),
+               N::Bold(vec![N::text("something")]),
                N::text(" for "),
                N::Player(0),
                N::text(" and "),

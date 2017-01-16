@@ -16,7 +16,7 @@ fn render_transformed(input: &[Node]) -> Result<String, MarkupError> {
             Node::Fg(_, ref children) |
             Node::Bg(_, ref children) |
             Node::Bold(ref children) => {
-                buf.push_str(&try!(render_transformed(children)));
+                buf.push_str(&render_transformed(children)?);
             }
             _ => return Err(MarkupError::Render(format!("unknown node {:?}", n))),
         }

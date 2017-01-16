@@ -10,26 +10,24 @@ pub fn transform(input: &[Node], players: &[String]) -> Result<Vec<Node>, String
     while let Some(n) = remaining.pop() {
         match n {
             Node::Player(p) => {
-                let mut t = try!(player(p, players));
+                let mut t = player(p, players)?;
                 t.reverse();
                 remaining.extend(t);
             }
             Node::Table(rows) => {
-                let mut t = try!(table(&rows, players));
+                let mut t = table(&rows, players)?;
                 t.reverse();
                 remaining.extend(t);
             }
             Node::Align(a, w, c) => {
-                let mut t = try!(align(a, w, &c, players));
+                let mut t = align(a, w, &c, players)?;
                 t.reverse();
                 remaining.extend(t);
             }
-            Node::Fg(c, children) => ret.push(Node::Fg(c, try!(transform(&children, players)))),
-            Node::Bg(c, children) => ret.push(Node::Bg(c, try!(transform(&children, players)))),
-            Node::Bold(children) => ret.push(Node::Bold(try!(transform(&children, players)))),
-            Node::Action(a, children) => {
-                ret.push(Node::Action(a, try!(transform(&children, players))))
-            }
+            Node::Fg(c, children) => ret.push(Node::Fg(c, transform(&children, players)?)),
+            Node::Bg(c, children) => ret.push(Node::Bg(c, transform(&children, players)?)),
+            Node::Bold(children) => ret.push(Node::Bold(transform(&children, players)?)),
+            Node::Action(a, children) => ret.push(Node::Action(a, transform(&children, players)?)),
             Node::Text(_) => ret.push(n),
             Node::Group(children) => {
                 remaining.extend(children.into_iter().rev().collect::<Vec<Node>>());
@@ -48,13 +46,8 @@ fn player(p: usize, players: &[String]) -> Result<Vec<Node>, String> {
             p_len,
         ));
     }
-    Ok(vec![
-        Node::Bold(vec![
-            Node::Fg(player_color(p).to_owned(), vec![
-                Node::text(format!("• {}", players[p])),
-            ]),
-        ]),
-    ])
+    Ok(vec![Node::Bold(vec![Node::Fg(player_color(p).to_owned(),
+                                     vec![Node::text(format!("• {}", players[p]))])])])
 }
 
 fn table(rows: &[Row], players: &[String]) -> Result<Vec<Node>, String> {
@@ -66,7 +59,7 @@ fn table(rows: &[Row], players: &[String]) -> Result<Vec<Node>, String> {
         let mut row: Vec<Vec<Vec<Node>>> = vec![];
         let mut row_height: usize = 1;
         for (i, &(_, ref children)) in r.iter().enumerate() {
-            let cell_lines = try!(to_lines(children, players));
+            let cell_lines = to_lines(children, players)?;
             row_height = cmp::max(row_height, cell_lines.len());
             let width = cell_lines.iter().fold(0, |width, l| cmp::max(width, len(l)));
             if i >= widths.len() {
@@ -108,7 +101,7 @@ fn align(a: Align,
          players: &[String])
          -> Result<Vec<Node>, String> {
     let mut aligned: Vec<Node> = vec![];
-    for l in try!(to_lines(children, players)) {
+    for l in to_lines(children, players)? {
         if !aligned.is_empty() {
             aligned.push(Node::text("\n"));
         }
@@ -157,30 +150,34 @@ fn len(nodes: &[Node]) -> usize {
 /// nodes as necessary.
 pub fn to_lines(nodes: &[Node], players: &[String]) -> Result<Vec<Vec<Node>>, String> {
     let mut lines: Vec<Vec<Node>> = vec![];
-    let transformed = try!(transform(nodes, players));
+    let transformed = transform(nodes, players)?;
     let mut line: Vec<Node> = vec![];
     for n in transformed {
         let n_lines: Vec<Vec<Node>> = match n {
             Node::Fg(color, children) => {
-                try!(to_lines(&children, players))
+                to_lines(&children, players)
+                    ?
                     .iter()
                     .map(|l| vec![Node::Fg(color, l.to_owned())])
                     .collect()
             }
             Node::Bg(color, children) => {
-                try!(to_lines(&children, players))
+                to_lines(&children, players)
+                    ?
                     .iter()
                     .map(|l| vec![Node::Bg(color, l.to_owned())])
                     .collect()
             }
             Node::Bold(children) => {
-                try!(to_lines(&children, players))
+                to_lines(&children, players)
+                    ?
                     .iter()
                     .map(|l| vec![Node::Bold(l.to_owned())])
                     .collect()
             }
             Node::Action(action, children) => {
-                try!(to_lines(&children, players))
+                to_lines(&children, players)
+                    ?
                     .iter()
                     .map(|l| vec![Node::Action(action.to_owned(), l.to_owned())])
                     .collect()
@@ -214,71 +211,40 @@ mod tests {
     #[test]
     fn align_works() {
         assert_eq!(transform(&vec![N::Align(A::Left, 10, vec![N::text("abc")])], &vec![]),
-                   Ok(vec![
-                       N::text("abc"),
-                       N::text("       "),
-                   ]));
+                   Ok(vec![N::text("abc"), N::text("       ")]));
         assert_eq!(transform(&vec![N::Align(A::Center, 10, vec![N::text("abc")])],
                              &vec![]),
-                   Ok(vec![
-                       N::text("   "),
-                       N::text("abc"),
-                       N::text("    "),
-                   ]));
+                   Ok(vec![N::text("   "), N::text("abc"), N::text("    ")]));
         assert_eq!(transform(&vec![N::Align(A::Right, 10, vec![N::text("abc")])], &vec![]),
-                   Ok(vec![
-                       N::text("       "),
-                       N::text("abc"),
-                   ]));
+                   Ok(vec![N::text("       "), N::text("abc")]));
     }
 
     #[test]
     fn table_align_works() {
         assert_eq!(Ok("           blah     \nheadersome long text".to_string()),
-                   render(&vec![
-            N::Table(vec![
-                vec![
-                    (A::Left, vec![]),
-                    (A::Center, vec![
-                        N::Fg(GREY, vec![N::text("blah")]),
-                    ]),
-                ],
-                vec![
-                    (A::Right, vec![
-                        N::text("header"),
-                    ]),
-                    (A::Center, vec![
-                        N::text("some long text"),
-                    ]),
-                ],
-            ]),
-        ],
+                   render(&vec![N::Table(vec![vec![(A::Left, vec![]),
+                                                   (A::Center,
+                                                    vec![N::Fg(GREY, vec![N::text("blah")])])],
+                                              vec![(A::Right, vec![N::text("header")]),
+                                                   (A::Center,
+                                                    vec![N::text("some long text")])]])],
                           &vec![]));
     }
 
     #[test]
     fn table_in_table_works() {
-        let t = transform(&vec![N::Table(vec![
-            vec![(A::Left, vec![N::text("one")])],
-            vec![(A::Left, vec![N::text("two")])],
-            vec![(A::Left, vec![N::text("three")])],
-            ])],
+        let t = transform(&vec![N::Table(vec![vec![(A::Left, vec![N::text("one")])],
+                                              vec![(A::Left, vec![N::text("two")])],
+                                              vec![(A::Left, vec![N::text("three")])]])],
                           &vec![])
             .unwrap();
         assert_eq!(render(&t, &vec![]).unwrap(),
-                   render(&vec![N::Table(vec![
-                vec![(A::Left, t.clone())],
-                ])],
-                          &vec![])
-                       .unwrap());
+                   render(&vec![N::Table(vec![vec![(A::Left, t.clone())]])], &vec![]).unwrap());
     }
 
     #[test]
     fn to_lines_works() {
         assert_eq!(to_lines(&vec![N::text("one\ntwo")], &vec![]),
-                   Ok(vec![
-            vec![N::text("one")],
-            vec![N::text("two")],
-            ]));
+                   Ok(vec![vec![N::text("one")], vec![N::text("two")]]));
     }
 }

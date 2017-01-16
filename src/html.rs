@@ -45,13 +45,9 @@ fn render_nodes(input: &[Node]) -> Result<String, MarkupError> {
     for n in input {
         match *n {
             Node::Text(ref t) => buf.push_str(&escape(t)),
-            Node::Fg(ref color, ref children) => {
-                buf.push_str(&fg(color, &try!(render_nodes(children))))
-            }
-            Node::Bg(ref color, ref children) => {
-                buf.push_str(&bg(color, &try!(render_nodes(children))))
-            }
-            Node::Bold(ref children) => buf.push_str(&b(&try!(render_nodes(children)))),
+            Node::Fg(ref color, ref children) => buf.push_str(&fg(color, &render_nodes(children)?)),
+            Node::Bg(ref color, ref children) => buf.push_str(&bg(color, &render_nodes(children)?)),
+            Node::Bold(ref children) => buf.push_str(&b(&render_nodes(children)?)),
             _ => return Err(MarkupError::Render(format!("unknown node {:?}", n))),
         }
     }

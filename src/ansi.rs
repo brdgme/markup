@@ -25,19 +25,19 @@ fn render_styled(input: &[Node], last_style: Style) -> Result<String, MarkupErro
             Node::Fg(ref color, ref children) => {
                 let new_style = Style { fg: color, ..last_style };
                 buf.push_str(&new_style.ansi());
-                buf.push_str(&try!(render_styled(children, new_style)));
+                buf.push_str(&render_styled(children, new_style)?);
                 buf.push_str(&last_style.ansi());
             }
             Node::Bg(ref color, ref children) => {
                 let new_style = Style { bg: color, ..last_style };
                 buf.push_str(&new_style.ansi());
-                buf.push_str(&try!(render_styled(children, new_style)));
+                buf.push_str(&render_styled(children, new_style)?);
                 buf.push_str(&last_style.ansi());
             }
             Node::Bold(ref children) => {
                 let new_style = Style { bold: true, ..last_style };
                 buf.push_str(&new_style.ansi());
-                buf.push_str(&try!(render_styled(children, new_style)));
+                buf.push_str(&render_styled(children, new_style)?);
                 buf.push_str(&last_style.ansi());
             }
             _ => return Err(MarkupError::Render(format!("unknown node {:?}", n))),
