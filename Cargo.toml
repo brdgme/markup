@@ -4,4 +4,5 @@ version = "0.1.0"
 authors = ["Michael Alexander <beefsack@gmail.com>"]
 
 [dependencies]
+brdgme-std = { path = "../std" }
 brdgme-color = { path = "../color" }
