@@ -1,23 +1,15 @@
 use transform;
 use ast::Node;
 use brdgme_color::Style;
-use error::MarkupError;
 
-pub fn render(input: &[Node], players: &[String]) -> Result<String, MarkupError> {
+pub fn render(input: &[Node], players: &[String]) -> String {
     let default_style = Style::default();
-    transform::transform(input, players)
-        .map_err(From::from)
-        .and_then(|nodes| render_styled(&nodes, default_style))
-        .map(|output| {
-            format!(
-                "{}{}",
-                default_style.ansi(),
-                output,
-            )
-        })
+    format!("{}{}",
+            default_style.ansi(),
+            render_styled(&transform::transform(input, players), default_style))
 }
 
-fn render_styled(input: &[Node], last_style: Style) -> Result<String, MarkupError> {
+fn render_styled(input: &[Node], last_style: Style) -> String {
     let mut buf = String::new();
     for n in input {
         match *n {
@@ -25,23 +17,28 @@ fn render_styled(input: &[Node], last_style: Style) -> Result<String, MarkupErro
             Node::Fg(ref color, ref children) => {
                 let new_style = Style { fg: color, ..last_style };
                 buf.push_str(&new_style.ansi());
-                buf.push_str(&render_styled(children, new_style)?);
+                buf.push_str(&render_styled(children, new_style));
                 buf.push_str(&last_style.ansi());
             }
             Node::Bg(ref color, ref children) => {
                 let new_style = Style { bg: color, ..last_style };
                 buf.push_str(&new_style.ansi());
-                buf.push_str(&render_styled(children, new_style)?);
+                buf.push_str(&render_styled(children, new_style));
                 buf.push_str(&last_style.ansi());
             }
             Node::Bold(ref children) => {
                 let new_style = Style { bold: true, ..last_style };
                 buf.push_str(&new_style.ansi());
-                buf.push_str(&render_styled(children, new_style)?);
+                buf.push_str(&render_styled(children, new_style));
                 buf.push_str(&last_style.ansi());
             }
-            _ => return Err(MarkupError::Render(format!("unknown node {:?}", n))),
+            Node::Action(_, _) |
+            Node::Player(_) |
+            Node::Table(_) |
+            Node::Align(_, _, _) |
+            Node::Group(_) |
+            Node::Indent(_, _) => panic!("found untransformed node"),
         }
     }
-    Ok(buf)
+    buf
 }

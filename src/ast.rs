@@ -31,6 +31,7 @@ pub enum Node {
     Align(Align, usize, Vec<Node>),
     Text(String),
     Group(Vec<Node>),
+    Indent(usize, Vec<Node>),
 }
 
 impl Node {
@@ -41,6 +42,7 @@ impl Node {
             Node::Bold(ref children) |
             Node::Action(_, ref children) |
             Node::Align(_, _, ref children) |
+            Node::Indent(_, ref children) |
             Node::Group(ref children) => children.clone(),
             Node::Table(ref rows) => {
                 rows.iter()

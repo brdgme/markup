@@ -3,54 +3,57 @@ use brdgme_color::player_color;
 use std::cmp;
 use std::iter;
 
-pub fn transform(input: &[Node], players: &[String]) -> Result<Vec<Node>, String> {
+pub fn transform(input: &[Node], players: &[String]) -> Vec<Node> {
     let mut remaining: Vec<Node> = input.to_owned();
     remaining.reverse();
     let mut ret: Vec<Node> = vec![];
     while let Some(n) = remaining.pop() {
         match n {
             Node::Player(p) => {
-                let mut t = player(p, players)?;
+                let mut t = player(p, players);
                 t.reverse();
                 remaining.extend(t);
             }
             Node::Table(rows) => {
-                let mut t = table(&rows, players)?;
+                let mut t = table(&rows, players);
                 t.reverse();
                 remaining.extend(t);
             }
             Node::Align(a, w, c) => {
-                let mut t = align(a, w, &c, players)?;
+                let mut t = align(a, w, &c, players);
                 t.reverse();
                 remaining.extend(t);
             }
-            Node::Fg(c, children) => ret.push(Node::Fg(c, transform(&children, players)?)),
-            Node::Bg(c, children) => ret.push(Node::Bg(c, transform(&children, players)?)),
-            Node::Bold(children) => ret.push(Node::Bold(transform(&children, players)?)),
-            Node::Action(a, children) => ret.push(Node::Action(a, transform(&children, players)?)),
+            Node::Indent(n, c) => {
+                let mut t = indent(n, &c, players);
+                t.reverse();
+                remaining.extend(t);
+            }
+            Node::Fg(c, children) => ret.push(Node::Fg(c, transform(&children, players))),
+            Node::Bg(c, children) => ret.push(Node::Bg(c, transform(&children, players))),
+            Node::Bold(children) => ret.push(Node::Bold(transform(&children, players))),
+            Node::Action(a, children) => ret.push(Node::Action(a, transform(&children, players))),
             Node::Text(_) => ret.push(n),
             Node::Group(children) => {
                 remaining.extend(children.into_iter().rev().collect::<Vec<Node>>());
             }
         }
     }
-    Ok(ret)
+    ret
 }
 
-fn player(p: usize, players: &[String]) -> Result<Vec<Node>, String> {
+fn player(p: usize, players: &[String]) -> Vec<Node> {
     let p_len = players.len();
-    if p >= p_len {
-        return Err(format!(
-            "invalid player index {}, there are only {} players",
-            p,
-            p_len,
-        ));
-    }
-    Ok(vec![Node::Bold(vec![Node::Fg(player_color(p).to_owned(),
-                                     vec![Node::text(format!("• {}", players[p]))])])])
+    let p_name = if p < p_len {
+        players[p].to_string()
+    } else {
+        format!("Player {}", p)
+    };
+    vec![Node::Bold(vec![Node::Fg(player_color(p).to_owned(),
+                                  vec![Node::text(format!("• {}", p_name))])])]
 }
 
-fn table(rows: &[Row], players: &[String]) -> Result<Vec<Node>, String> {
+fn table(rows: &[Row], players: &[String]) -> Vec<Node> {
     // Transform individual cells and calculate row heights and column widths.
     let mut transformed: Vec<Vec<Vec<Vec<Node>>>> = vec![];
     let mut widths: Vec<usize> = vec![];
@@ -59,7 +62,7 @@ fn table(rows: &[Row], players: &[String]) -> Result<Vec<Node>, String> {
         let mut row: Vec<Vec<Vec<Node>>> = vec![];
         let mut row_height: usize = 1;
         for (i, &(_, ref children)) in r.iter().enumerate() {
-            let cell_lines = to_lines(children, players)?;
+            let cell_lines = to_lines(children, players);
             row_height = cmp::max(row_height, cell_lines.len());
             let width = cell_lines.iter().fold(0, |width, l| cmp::max(width, len(l)));
             if i >= widths.len() {
@@ -92,16 +95,12 @@ fn table(rows: &[Row], players: &[String]) -> Result<Vec<Node>, String> {
             }
         }
     }
-    Ok(output)
+    output
 }
 
-fn align(a: Align,
-         width: usize,
-         children: &[Node],
-         players: &[String])
-         -> Result<Vec<Node>, String> {
+fn align(a: Align, width: usize, children: &[Node], players: &[String]) -> Vec<Node> {
     let mut aligned: Vec<Node> = vec![];
-    for l in to_lines(children, players)? {
+    for l in to_lines(children, players) {
         if !aligned.is_empty() {
             aligned.push(Node::text("\n"));
         }
@@ -133,7 +132,18 @@ fn align(a: Align,
             }
         }
     }
-    Ok(aligned)
+    aligned
+}
+
+fn indent(n: usize, children: &[Node], players: &[String]) -> Vec<Node> {
+    from_lines(&to_lines(children, players)
+        .iter()
+        .map(|l| {
+            let mut new_l = vec![Node::Text(iter::repeat(" ").take(n).collect())];
+            new_l.extend(l.clone());
+            new_l
+        })
+        .collect::<Vec<Vec<Node>>>())
 }
 
 fn len(nodes: &[Node]) -> usize {
@@ -148,42 +158,42 @@ fn len(nodes: &[Node]) -> usize {
 
 /// `to_lines` splits text nodes into multiple text nodes, duplicating parent
 /// nodes as necessary.
-pub fn to_lines(nodes: &[Node], players: &[String]) -> Result<Vec<Vec<Node>>, String> {
+pub fn to_lines(nodes: &[Node], players: &[String]) -> Vec<Vec<Node>> {
     let mut lines: Vec<Vec<Node>> = vec![];
-    let transformed = transform(nodes, players)?;
+    let transformed = transform(nodes, players);
     let mut line: Vec<Node> = vec![];
     for n in transformed {
         let n_lines: Vec<Vec<Node>> = match n {
             Node::Fg(color, children) => {
                 to_lines(&children, players)
-                    ?
                     .iter()
                     .map(|l| vec![Node::Fg(color, l.to_owned())])
                     .collect()
             }
             Node::Bg(color, children) => {
                 to_lines(&children, players)
-                    ?
                     .iter()
                     .map(|l| vec![Node::Bg(color, l.to_owned())])
                     .collect()
             }
             Node::Bold(children) => {
                 to_lines(&children, players)
-                    ?
                     .iter()
                     .map(|l| vec![Node::Bold(l.to_owned())])
                     .collect()
             }
             Node::Action(action, children) => {
                 to_lines(&children, players)
-                    ?
                     .iter()
                     .map(|l| vec![Node::Action(action.to_owned(), l.to_owned())])
                     .collect()
             }
             Node::Text(text) => text.split('\n').map(|l| vec![Node::text(l)]).collect(),
-            _ => return Err(format!("invalid node to reduce to lines {:?}", n)),
+            Node::Player(_) |
+            Node::Table(_) |
+            Node::Align(_, _, _) |
+            Node::Group(_) |
+            Node::Indent(_, _) => panic!("found untransformed node"),
         };
         let n_lines_len = n_lines.len();
         if n_lines_len > 0 {
@@ -198,7 +208,22 @@ pub fn to_lines(nodes: &[Node], players: &[String]) -> Result<Vec<Vec<Node>>, St
         }
     }
     lines.push(line);
-    Ok(lines)
+    lines
+}
+
+pub fn from_lines(lines: &[Vec<Node>]) -> Vec<Node> {
+    lines.iter()
+        .enumerate()
+        .flat_map(|(i, l)| {
+            let mut new_l = if i == 0 {
+                vec![]
+            } else {
+                vec![Node::text("\n")]
+            };
+            new_l.extend(l.clone());
+            new_l
+        })
+        .collect()
 }
 
 #[cfg(test)]
@@ -211,17 +236,17 @@ mod tests {
     #[test]
     fn align_works() {
         assert_eq!(transform(&vec![N::Align(A::Left, 10, vec![N::text("abc")])], &vec![]),
-                   Ok(vec![N::text("abc"), N::text("       ")]));
+                   vec![N::text("abc"), N::text("       ")]);
         assert_eq!(transform(&vec![N::Align(A::Center, 10, vec![N::text("abc")])],
                              &vec![]),
-                   Ok(vec![N::text("   "), N::text("abc"), N::text("    ")]));
+                   vec![N::text("   "), N::text("abc"), N::text("    ")]);
         assert_eq!(transform(&vec![N::Align(A::Right, 10, vec![N::text("abc")])], &vec![]),
-                   Ok(vec![N::text("       "), N::text("abc")]));
+                   vec![N::text("       "), N::text("abc")]);
     }
 
     #[test]
     fn table_align_works() {
-        assert_eq!(Ok("           blah     \nheadersome long text".to_string()),
+        assert_eq!("           blah     \nheadersome long text".to_string(),
                    render(&vec![N::Table(vec![vec![(A::Left, vec![]),
                                                    (A::Center,
                                                     vec![N::Fg(GREY, vec![N::text("blah")])])],
@@ -236,15 +261,14 @@ mod tests {
         let t = transform(&vec![N::Table(vec![vec![(A::Left, vec![N::text("one")])],
                                               vec![(A::Left, vec![N::text("two")])],
                                               vec![(A::Left, vec![N::text("three")])]])],
-                          &vec![])
-            .unwrap();
-        assert_eq!(render(&t, &vec![]).unwrap(),
-                   render(&vec![N::Table(vec![vec![(A::Left, t.clone())]])], &vec![]).unwrap());
+                          &vec![]);
+        assert_eq!(render(&t, &vec![]),
+                   render(&vec![N::Table(vec![vec![(A::Left, t.clone())]])], &vec![]));
     }
 
     #[test]
     fn to_lines_works() {
         assert_eq!(to_lines(&vec![N::text("one\ntwo")], &vec![]),
-                   Ok(vec![vec![N::text("one")], vec![N::text("two")]]));
+                   vec![vec![N::text("one")], vec![N::text("two")]]);
     }
 }
