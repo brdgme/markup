@@ -20,8 +20,10 @@ fn render_transformed(input: &[Node]) -> String {
             Node::Table(_) |
             Node::Align(_, _, _) |
             Node::Group(_) |
-            Node::Indent(_, _) => panic!("found untransformed node"),
+            Node::Indent(_, _) |
+            Node::Canvas(_) => panic!("found untransformed node"),
         }
     }
     buf
 }
+

@@ -37,8 +37,10 @@ fn render_styled(input: &[Node], last_style: Style) -> String {
             Node::Table(_) |
             Node::Align(_, _, _) |
             Node::Group(_) |
-            Node::Indent(_, _) => panic!("found untransformed node"),
+            Node::Indent(_, _) |
+            Node::Canvas(_) => panic!("found untransformed node"),
         }
     }
     buf
 }
+

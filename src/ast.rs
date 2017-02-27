@@ -32,6 +32,7 @@ pub enum Node {
     Text(String),
     Group(Vec<Node>),
     Indent(usize, Vec<Node>),
+    Canvas(Vec<(usize, usize, Vec<Node>)>),
 }
 
 impl Node {
@@ -50,6 +51,11 @@ impl Node {
                     .collect()
             }
             Node::Text(_) | Node::Player(_) => vec![],
+            Node::Canvas(ref layers) => {
+                layers.iter()
+                    .flat_map(|&(_, _, ref children)| children.clone())
+                    .collect()
+            }
         }
     }
 
@@ -63,3 +69,4 @@ impl Node {
 pub type Row = Vec<Cell>;
 
 pub type Cell = (Align, Vec<Node>);
+

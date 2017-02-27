@@ -2,6 +2,7 @@ use ast::{Node, Row, Align};
 use brdgme_color::player_color;
 use std::cmp;
 use std::iter;
+use std::ops::Range;
 
 pub fn transform(input: &[Node], players: &[String]) -> Vec<Node> {
     let mut remaining: Vec<Node> = input.to_owned();
@@ -26,6 +27,11 @@ pub fn transform(input: &[Node], players: &[String]) -> Vec<Node> {
             }
             Node::Indent(n, c) => {
                 let mut t = indent(n, &c, players);
+                t.reverse();
+                remaining.extend(t);
+            }
+            Node::Canvas(els) => {
+                let mut t = canvas(&els, players);
                 t.reverse();
                 remaining.extend(t);
             }
@@ -62,7 +68,7 @@ fn table(rows: &[Row], players: &[String]) -> Vec<Node> {
         let mut row: Vec<Vec<Vec<Node>>> = vec![];
         let mut row_height: usize = 1;
         for (i, &(_, ref children)) in r.iter().enumerate() {
-            let cell_lines = to_lines(children, players);
+            let cell_lines = to_lines(&transform(children, players));
             row_height = cmp::max(row_height, cell_lines.len());
             let width = cell_lines.iter().fold(0, |width, l| cmp::max(width, len(l)));
             if i >= widths.len() {
@@ -85,10 +91,12 @@ fn table(rows: &[Row], players: &[String]) -> Vec<Node> {
             for (ci, w) in widths.iter().enumerate() {
                 if let Some(&(ref align, _)) = r.get(ci) {
                     output.push(if transformed[ri][ci].len() > line_i {
-                        Node::Align(align.to_owned(), *w, transformed[ri][ci][line_i].to_owned())
-                    } else {
-                        Node::Align(Align::Left, widths[ci], vec![])
-                    });
+                                    Node::Align(align.to_owned(),
+                                                *w,
+                                                transformed[ri][ci][line_i].to_owned())
+                                } else {
+                                    Node::Align(Align::Left, widths[ci], vec![])
+                                });
                 } else {
                     output.push(Node::Align(Align::Left, widths[ci], vec![]));
                 }
@@ -100,7 +108,7 @@ fn table(rows: &[Row], players: &[String]) -> Vec<Node> {
 
 fn align(a: Align, width: usize, children: &[Node], players: &[String]) -> Vec<Node> {
     let mut aligned: Vec<Node> = vec![];
-    for l in to_lines(children, players) {
+    for l in to_lines(&transform(children, players)) {
         if !aligned.is_empty() {
             aligned.push(Node::text("\n"));
         }
@@ -136,14 +144,14 @@ fn align(a: Align, width: usize, children: &[Node], players: &[String]) -> Vec<N
 }
 
 fn indent(n: usize, children: &[Node], players: &[String]) -> Vec<Node> {
-    from_lines(&to_lines(children, players)
-        .iter()
-        .map(|l| {
-            let mut new_l = vec![Node::Text(iter::repeat(" ").take(n).collect())];
-            new_l.extend(l.clone());
-            new_l
-        })
-        .collect::<Vec<Vec<Node>>>())
+    from_lines(&to_lines(&transform(children, players))
+                    .iter()
+                    .map(|l| {
+                             let mut new_l = vec![Node::Text(iter::repeat(" ").take(n).collect())];
+                             new_l.extend(l.clone());
+                             new_l
+                         })
+                    .collect::<Vec<Vec<Node>>>())
 }
 
 fn len(nodes: &[Node]) -> usize {
@@ -158,42 +166,42 @@ fn len(nodes: &[Node]) -> usize {
 
 /// `to_lines` splits text nodes into multiple text nodes, duplicating parent
 /// nodes as necessary.
-pub fn to_lines(nodes: &[Node], players: &[String]) -> Vec<Vec<Node>> {
+fn to_lines(nodes: &[Node]) -> Vec<Vec<Node>> {
     let mut lines: Vec<Vec<Node>> = vec![];
-    let transformed = transform(nodes, players);
     let mut line: Vec<Node> = vec![];
-    for n in transformed {
-        let n_lines: Vec<Vec<Node>> = match n {
-            Node::Fg(color, children) => {
-                to_lines(&children, players)
+    for n in nodes {
+        let n_lines: Vec<Vec<Node>> = match *n {
+            Node::Fg(ref color, ref children) => {
+                to_lines(children)
                     .iter()
-                    .map(|l| vec![Node::Fg(color, l.to_owned())])
+                    .map(|l| vec![Node::Fg(*color, l.to_owned())])
                     .collect()
             }
-            Node::Bg(color, children) => {
-                to_lines(&children, players)
+            Node::Bg(ref color, ref children) => {
+                to_lines(children)
                     .iter()
-                    .map(|l| vec![Node::Bg(color, l.to_owned())])
+                    .map(|l| vec![Node::Bg(*color, l.to_owned())])
                     .collect()
             }
-            Node::Bold(children) => {
-                to_lines(&children, players)
+            Node::Bold(ref children) => {
+                to_lines(children)
                     .iter()
                     .map(|l| vec![Node::Bold(l.to_owned())])
                     .collect()
             }
-            Node::Action(action, children) => {
-                to_lines(&children, players)
+            Node::Action(ref action, ref children) => {
+                to_lines(children)
                     .iter()
                     .map(|l| vec![Node::Action(action.to_owned(), l.to_owned())])
                     .collect()
             }
-            Node::Text(text) => text.split('\n').map(|l| vec![Node::text(l)]).collect(),
+            Node::Text(ref text) => text.split('\n').map(|l| vec![Node::text(l)]).collect(),
             Node::Player(_) |
             Node::Table(_) |
             Node::Align(_, _, _) |
             Node::Group(_) |
-            Node::Indent(_, _) => panic!("found untransformed node"),
+            Node::Indent(_, _) |
+            Node::Canvas(_) => panic!("found untransformed node"),
         };
         let n_lines_len = n_lines.len();
         if n_lines_len > 0 {
@@ -211,7 +219,7 @@ pub fn to_lines(nodes: &[Node], players: &[String]) -> Vec<Vec<Node>> {
     lines
 }
 
-pub fn from_lines(lines: &[Vec<Node>]) -> Vec<Node> {
+fn from_lines(lines: &[Vec<Node>]) -> Vec<Node> {
     lines.iter()
         .enumerate()
         .flat_map(|(i, l)| {
@@ -224,6 +232,109 @@ pub fn from_lines(lines: &[Vec<Node>]) -> Vec<Node> {
             new_l
         })
         .collect()
+}
+
+fn slice(nodes: &[Node], range: Range<usize>) -> Vec<Node> {
+    if range.start >= range.end {
+        return vec![];
+    }
+    let mut s = vec![];
+    let mut start = range.start;
+    let mut end = range.end;
+    for n in nodes {
+        let n_len = len(&[n.clone()]);
+        if n_len < start {
+            start -= n_len;
+            end -= n_len;
+            continue;
+        }
+        let n_s: Node = match *n {
+            Node::Fg(ref color, ref children) => Node::Fg(*color, slice(children, start..end)),
+            Node::Bg(ref color, ref children) => Node::Bg(*color, slice(children, start..end)),
+            Node::Bold(ref children) => Node::Bold(slice(children, start..end)),
+            Node::Action(ref action, ref children) => {
+                Node::Action(action.to_string(), slice(children, start..end))
+            }
+            Node::Text(ref text) => Node::Text(text[start..cmp::min(text.len(), end)].to_string()),
+            Node::Player(_) |
+            Node::Table(_) |
+            Node::Align(_, _, _) |
+            Node::Group(_) |
+            Node::Indent(_, _) |
+            Node::Canvas(_) => panic!("found untransformed node"),
+        };
+
+        let n_s_len = len(&[n_s.clone()]);
+        s.push(n_s);
+        end -= cmp::min(start + n_s_len, end);
+        if end == 0 {
+            break;
+        }
+        start = 0;
+    }
+    s
+}
+
+fn canvas(els: &[(usize, usize, Vec<Node>)], players: &[String]) -> Vec<Node> {
+    // Output is split into lines each with a start position.
+    let mut lines: Vec<Vec<(usize, Vec<Node>)>> = vec![];
+    for &(x, y, ref nodes) in els {
+        let lines_len = lines.len();
+        let node_lines = to_lines(&transform(nodes, players));
+        let node_lines_len = node_lines.len();
+        if y + node_lines_len > lines_len {
+            lines.extend(iter::repeat(vec![]).take(y + node_lines_len - lines_len));
+        }
+        for (n_i, n_line) in node_lines.iter().enumerate() {
+            let n_line_y = y + n_i;
+            let n_line_len = len(n_line);
+            lines[n_line_y] = lines[n_line_y]
+                .iter()
+                .flat_map(|&(ex_x, ref ex_n_line)| {
+                    let ex_n_line_len = len(ex_n_line);
+                    if ex_x >= x && ex_x + ex_n_line_len <= x + n_line_len {
+                        // Full overlap, remove.
+                        return vec![];
+                    }
+                    if ex_x > x + n_line_len || x > ex_x + ex_n_line_len {
+                        // No overlap, keep.
+                        return vec![(ex_x, ex_n_line.clone())];
+                    }
+                    let mut new_parts = vec![];
+                    if x > ex_x {
+                        new_parts.push((ex_x, slice(ex_n_line, 0..x - ex_x)))
+                    }
+                    if ex_x + ex_n_line_len > x + n_line_len {
+                        new_parts.push((x + n_line_len,
+                                        slice(ex_n_line,
+                                              ex_n_line_len -
+                                              ((ex_x + ex_n_line_len) - (x + n_line_len))..
+                                              ex_n_line_len)));
+                    }
+                    new_parts
+                })
+                .collect();
+            lines[n_line_y].push((x, n_line.clone()));
+        }
+    }
+    from_lines(&lines.iter()
+                    .map(|l| {
+        let mut sorted_l = l.clone();
+        sorted_l.sort_by(|&(ref a, _), &(ref b, _)| a.cmp(b));
+        let mut last_x = 0;
+        sorted_l.iter()
+            .flat_map(|&(x, ref nodes)| {
+                let c_nodes = if x > last_x {
+                    vec![Node::Indent(x - last_x, nodes.clone())]
+                } else {
+                    nodes.clone()
+                };
+                last_x = x + len(nodes);
+                c_nodes
+            })
+            .collect()
+    })
+                    .collect::<Vec<Vec<Node>>>())
 }
 
 #[cfg(test)]
@@ -268,7 +379,23 @@ mod tests {
 
     #[test]
     fn to_lines_works() {
-        assert_eq!(to_lines(&vec![N::text("one\ntwo")], &vec![]),
+        assert_eq!(to_lines(&vec![N::text("one\ntwo")]),
                    vec![vec![N::text("one")], vec![N::text("two")]]);
     }
+
+    #[test]
+    fn slice_works() {
+        assert_eq!(slice(&vec![N::Fg(RED, vec![N::Bold(vec![N::text("blah")])])],
+                         1..3),
+                   vec![N::Fg(RED, vec![N::Bold(vec![N::text("la")])])]);
+        assert_eq!(slice(&vec![N::Bold(vec![N::Fg(RED, vec![N::text("one"), N::text("two")]),
+                                            N::Bg(BLUE,
+                                                  vec![N::text("three"), N::text("four")]),
+                                            N::Action("fart".to_string(),
+                                                      vec![N::text("five"), N::text("six")])])],
+                         10..16),
+                   vec![N::Bold(vec![N::Bg(BLUE, vec![N::text("e"), N::text("four")]),
+                                     N::Action("fart".to_string(), vec![N::text("f")])])]);
+    }
 }
+
