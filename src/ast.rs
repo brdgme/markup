@@ -25,12 +25,10 @@ pub enum Node {
     Fg(Color, Vec<Node>),
     Bg(Color, Vec<Node>),
     Bold(Vec<Node>),
-    Action(String, Vec<Node>),
+    Text(String),
     Player(usize),
     Table(Vec<Row>),
     Align(Align, usize, Vec<Node>),
-    Text(String),
-    Group(Vec<Node>),
     Indent(usize, Vec<Node>),
     Canvas(Vec<(usize, usize, Vec<Node>)>),
 }
@@ -40,6 +38,22 @@ impl Node {
         where T: Into<String>
     {
         Node::Text(t.into())
+    }
+}
+
+#[derive(PartialEq, Debug, Clone)]
+pub enum TNode {
+    Fg(Color, Vec<TNode>),
+    Bg(Color, Vec<TNode>),
+    Bold(Vec<TNode>),
+    Text(String),
+}
+
+impl TNode {
+    pub fn text<T>(t: T) -> TNode
+        where T: Into<String>
+    {
+        TNode::Text(t.into())
     }
 }
 
