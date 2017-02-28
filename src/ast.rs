@@ -36,29 +36,6 @@ pub enum Node {
 }
 
 impl Node {
-    pub fn children(&self) -> Vec<Node> {
-        match *self {
-            Node::Fg(_, ref children) |
-            Node::Bg(_, ref children) |
-            Node::Bold(ref children) |
-            Node::Action(_, ref children) |
-            Node::Align(_, _, ref children) |
-            Node::Indent(_, ref children) |
-            Node::Group(ref children) => children.clone(),
-            Node::Table(ref rows) => {
-                rows.iter()
-                    .flat_map(|r| r.iter().flat_map(|&(_, ref children)| children.clone()))
-                    .collect()
-            }
-            Node::Text(_) | Node::Player(_) => vec![],
-            Node::Canvas(ref layers) => {
-                layers.iter()
-                    .flat_map(|&(_, _, ref children)| children.clone())
-                    .collect()
-            }
-        }
-    }
-
     pub fn text<T>(t: T) -> Node
         where T: Into<String>
     {

@@ -154,12 +154,22 @@ fn indent(n: usize, children: &[Node], players: &[String]) -> Vec<Node> {
                     .collect::<Vec<Vec<Node>>>())
 }
 
+/// Calculates the length of the containing text.  Panics if it detects an untransformed node.
 fn len(nodes: &[Node]) -> usize {
     nodes.iter().fold(0, |sum, n| {
         sum +
         match *n {
             Node::Text(ref text) => text.chars().count(),
-            _ => len(&n.children()),
+            Node::Fg(_, ref children) |
+            Node::Bg(_, ref children) |
+            Node::Bold(ref children) |
+            Node::Action(_, ref children) => len(children),
+            Node::Player(_) |
+            Node::Table(_) |
+            Node::Align(_, _, _) |
+            Node::Group(_) |
+            Node::Indent(_, _) |
+            Node::Canvas(_) => panic!("found untransformed node"),
         }
     })
 }
