@@ -43,4 +43,3 @@ fn render_nodes(input: &[TNode]) -> String {
     }
     buf
 }
-

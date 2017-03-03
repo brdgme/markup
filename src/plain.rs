@@ -14,4 +14,3 @@ pub fn render(input: &[TNode]) -> String {
     }
     buf
 }
-

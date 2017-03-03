@@ -35,4 +35,3 @@ fn render_styled(input: &[TNode], last_style: Style) -> String {
     }
     buf
 }
-

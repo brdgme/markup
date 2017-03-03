@@ -60,4 +60,3 @@ impl TNode {
 pub type Row = Vec<Cell>;
 
 pub type Cell = (Align, Vec<Node>);
-

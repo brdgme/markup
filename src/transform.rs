@@ -66,10 +66,10 @@ fn table(rows: &[Row], players: &[String]) -> Vec<TNode> {
             for (ci, w) in widths.iter().enumerate() {
                 if let Some(&(ref al, _)) = r.get(ci) {
                     output.extend(if transformed[ri][ci].len() > line_i {
-                                      align(al, *w, &transformed[ri][ci][line_i])
-                                  } else {
-                                      align(&Align::Left, widths[ci], &[])
-                                  });
+                        align(al, *w, &transformed[ri][ci][line_i])
+                    } else {
+                        align(&Align::Left, widths[ci], &[])
+                    });
                 } else {
                     output.extend(align(&Align::Left, widths[ci], &[]));
                 }
@@ -118,13 +118,13 @@ fn align(a: &Align, width: usize, children: &[TNode]) -> Vec<TNode> {
 
 fn indent(n: usize, children: &[TNode]) -> Vec<TNode> {
     from_lines(&to_lines(children)
-                    .iter()
-                    .map(|l| {
-                             let mut new_l = vec![TNode::Text(iter::repeat(" ").take(n).collect())];
-                             new_l.extend(l.clone());
-                             new_l
-                         })
-                    .collect::<Vec<Vec<TNode>>>())
+        .iter()
+        .map(|l| {
+            let mut new_l = vec![TNode::Text(iter::repeat(" ").take(n).collect())];
+            new_l.extend(l.clone());
+            new_l
+        })
+        .collect::<Vec<Vec<TNode>>>())
 }
 
 /// Calculates the length of the containing text.  Panics if it detects an untransformed node.
@@ -275,22 +275,23 @@ fn canvas(els: &[(usize, usize, Vec<Node>)], players: &[String]) -> Vec<TNode> {
         }
     }
     from_lines(&lines.iter()
-                    .map(|l| {
-        let mut sorted_l = l.clone();
-        sorted_l.sort_by(|&(ref a, _), &(ref b, _)| a.cmp(b));
-        let mut last_x = 0;
-        sorted_l.iter()
-            .flat_map(|&(x, ref nodes)| {
-                last_x = x + len(nodes);
-                if x > last_x {
-                    indent(x - last_x, nodes)
-                } else {
-                    nodes.clone()
-                }
-            })
-            .collect()
-    })
-                    .collect::<Vec<Vec<TNode>>>())
+        .map(|l| {
+            let mut sorted_l = l.clone();
+            sorted_l.sort_by(|&(ref a, _), &(ref b, _)| a.cmp(b));
+            let mut last_x = 0;
+            sorted_l.iter()
+                .flat_map(|&(x, ref nodes)| {
+                    let ret_nodes = if x > last_x {
+                        indent(x - last_x, nodes)
+                    } else {
+                        nodes.clone()
+                    };
+                    last_x = x + len(nodes);
+                    ret_nodes
+                })
+                .collect()
+        })
+        .collect::<Vec<Vec<TNode>>>())
 }
 
 #[cfg(test)]
@@ -320,7 +321,8 @@ mod tests {
                                                          vec![(A::Right,
                                                                vec![N::text("header")]),
                                                               (A::Center,
-                                                               vec![N::text("some long text")])]])],
+                                                               vec![N::text("some long \
+                                                                             text")])]])],
                                      &[])));
     }
 
@@ -355,4 +357,3 @@ mod tests {
                                       TN::Bg(GREY, vec![TN::text("f")])])]);
     }
 }
-

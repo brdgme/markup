@@ -29,22 +29,22 @@ mod tests {
     #[test]
     fn ansi_works() {
         ansi(&transform(&[N::text("Here is "),
-               N::Bold(vec![N::text("something")]),
-               N::text(" for "),
-               N::Player(0),
-               N::text(" and "),
-               N::Player(1)],
-             &vec!["mick".to_string(), "steve".to_string()]));
+                          N::Bold(vec![N::text("something")]),
+                          N::text(" for "),
+                          N::Player(0),
+                          N::text(" and "),
+                          N::Player(1)],
+                        &vec!["mick".to_string(), "steve".to_string()]));
     }
 
     #[test]
     fn html_works() {
         html(&transform(&[N::text("Here is "),
-               N::Bold(vec![N::text("something")]),
-               N::text(" for "),
-               N::Player(0),
-               N::text(" and "),
-               N::Player(1)],
-             &vec!["mick".to_string(), "steve".to_string()]));
+                          N::Bold(vec![N::text("something")]),
+                          N::text(" for "),
+                          N::Player(0),
+                          N::text(" and "),
+                          N::Player(1)],
+                        &vec!["mick".to_string(), "steve".to_string()]));
     }
 }
