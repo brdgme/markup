@@ -1,5 +1,6 @@
-use ast::{Node, TNode, Row, Align};
+use ast::{Node, TNode, Row, Align, BgRange};
 use brdgme_color::player_color;
+
 use std::cmp;
 use std::iter;
 use std::ops::Range;
@@ -45,7 +46,7 @@ fn table(rows: &[Row], players: &[String]) -> Vec<TNode> {
         for (i, &(_, ref children)) in r.iter().enumerate() {
             let cell_lines = to_lines(&transform(children, players));
             row_height = cmp::max(row_height, cell_lines.len());
-            let width = cell_lines.iter().fold(0, |width, l| cmp::max(width, len(l)));
+            let width = cell_lines.iter().fold(0, |width, l| cmp::max(width, TNode::len(l)));
             if i >= widths.len() {
                 widths.push(width);
             } else {
@@ -85,7 +86,7 @@ fn align(a: &Align, width: usize, children: &[TNode]) -> Vec<TNode> {
         if !aligned.is_empty() {
             aligned.push(TNode::text("\n"));
         }
-        let l_len = len(&l);
+        let l_len = TNode::len(&l);
         let diff = cmp::max(width, l_len) - l_len;
         match *a {
             Align::Left => {
@@ -125,19 +126,6 @@ fn indent(n: usize, children: &[TNode]) -> Vec<TNode> {
             new_l
         })
         .collect::<Vec<Vec<TNode>>>())
-}
-
-/// Calculates the length of the containing text.  Panics if it detects an untransformed node.
-fn len(nodes: &[TNode]) -> usize {
-    nodes.iter().fold(0, |sum, n| {
-        sum +
-        match *n {
-            TNode::Text(ref text) => text.chars().count(),
-            TNode::Fg(_, ref children) |
-            TNode::Bg(_, ref children) |
-            TNode::Bold(ref children) => len(children),
-        }
-    })
 }
 
 /// `to_lines` splits text nodes into multiple text nodes, duplicating parent
@@ -206,7 +194,7 @@ fn slice(nodes: &[TNode], range: &Range<usize>) -> Vec<TNode> {
     let mut start = range.start;
     let mut end = range.end;
     for n in nodes {
-        let n_len = len(&[n.clone()]);
+        let n_len = TNode::len(&[n.clone()]);
         if n_len < start {
             start -= n_len;
             end -= n_len;
@@ -221,7 +209,7 @@ fn slice(nodes: &[TNode], range: &Range<usize>) -> Vec<TNode> {
             }
         };
 
-        let n_s_len = len(&[n_s.clone()]);
+        let n_s_len = TNode::len(&[n_s.clone()]);
         s.push(n_s);
         end -= cmp::min(start + n_s_len, end);
         if end == 0 {
@@ -232,9 +220,33 @@ fn slice(nodes: &[TNode], range: &Range<usize>) -> Vec<TNode> {
     s
 }
 
+type CanvasLine = Vec<(usize, Vec<TNode>)>;
+
+fn canvas_line_bg_ranges(cl: &CanvasLine) -> Vec<BgRange> {
+    cl.iter()
+        .flat_map(|&(offset, ref els)| {
+            TNode::bg_ranges(els).iter().map(|ref bgr| bgr.offset(offset)).collect::<Vec<BgRange>>()
+        })
+        .collect()
+}
+
+fn bg_ranges_slice(bgrs: &[BgRange], range: &Range<usize>) -> Vec<BgRange> {
+    bgrs.iter()
+        .filter_map(|bgr| if bgr.start >= range.end || bgr.end <= range.start {
+            None
+        } else {
+            Some(BgRange {
+                start: cmp::max(bgr.start, range.start),
+                end: cmp::min(bgr.end, range.end),
+                ..*bgr
+            })
+        })
+        .collect()
+}
+
 fn canvas(els: &[(usize, usize, Vec<Node>)], players: &[String]) -> Vec<TNode> {
     // Output is split into lines each with a start position.
-    let mut lines: Vec<Vec<(usize, Vec<TNode>)>> = vec![];
+    let mut lines: Vec<CanvasLine> = vec![];
     for &(x, y, ref nodes) in els {
         let lines_len = lines.len();
         let node_lines = to_lines(&transform(nodes, players));
@@ -242,13 +254,36 @@ fn canvas(els: &[(usize, usize, Vec<Node>)], players: &[String]) -> Vec<TNode> {
         if y + node_lines_len > lines_len {
             lines.extend(iter::repeat(vec![]).take(y + node_lines_len - lines_len));
         }
-        for (n_i, n_line) in node_lines.iter().enumerate() {
+        for (n_i, orig_n_line) in node_lines.iter().enumerate() {
             let n_line_y = y + n_i;
-            let n_line_len = len(n_line);
+            let n_line_len = TNode::len(orig_n_line);
+            // Inherit background colors from existing lines if required.
+            let ex_n_line_bgrs = canvas_line_bg_ranges(&lines[n_line_y]);
+            let n_line: Vec<TNode> = TNode::bg_ranges(orig_n_line)
+                .iter()
+                .flat_map(|ref bgr| match bgr.color {
+                    Some(_) => slice(&orig_n_line, &(bgr.start..bgr.end)),
+                    None => {
+                        bg_ranges_slice(&ex_n_line_bgrs, &(bgr.start + x..bgr.end + x))
+                            .iter()
+                            .flat_map(|ref ex_n_line_bgr| {
+                                let n_slice = slice(&orig_n_line,
+                                                    &(ex_n_line_bgr.start - x..
+                                                      ex_n_line_bgr.end - x));
+                                match ex_n_line_bgr.color {
+                                    Some(c) => vec![TNode::Bg(c, n_slice)],
+                                    None => n_slice,
+                                }
+                            })
+                            .collect()
+                    }
+                })
+                .collect();
+            // Remove parts of existing lines which this new line now covers.
             lines[n_line_y] = lines[n_line_y]
                 .iter()
                 .flat_map(|&(ex_x, ref ex_n_line)| {
-                    let ex_n_line_len = len(ex_n_line);
+                    let ex_n_line_len = TNode::len(ex_n_line);
                     if ex_x >= x && ex_x + ex_n_line_len <= x + n_line_len {
                         // Full overlap, remove.
                         return vec![];
@@ -286,7 +321,7 @@ fn canvas(els: &[(usize, usize, Vec<Node>)], players: &[String]) -> Vec<TNode> {
                     } else {
                         nodes.clone()
                     };
-                    last_x = x + len(nodes);
+                    last_x = x + TNode::len(nodes);
                     ret_nodes
                 })
                 .collect()

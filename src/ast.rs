@@ -49,14 +49,129 @@ pub enum TNode {
     Text(String),
 }
 
+#[derive(PartialEq, Debug)]
+pub struct BgRange {
+    pub start: usize,
+    pub end: usize,
+    pub color: Option<Color>,
+}
+
+impl BgRange {
+    pub fn offset(&self, offset: usize) -> BgRange {
+        BgRange {
+            start: self.start + offset,
+            end: self.end + offset,
+            ..*self
+        }
+    }
+}
+
 impl TNode {
     pub fn text<T>(t: T) -> TNode
         where T: Into<String>
     {
         TNode::Text(t.into())
     }
+
+    pub fn bg_ranges(nodes: &[TNode]) -> Vec<BgRange> {
+        let mut rs: Vec<BgRange> = vec![];
+        let mut offset = 0;
+        for n in nodes {
+            match *n {
+                TNode::Text(ref t) => {
+                    let cnt = t.chars().count();
+                    rs.push(BgRange {
+                        start: offset,
+                        end: offset + cnt,
+                        color: None,
+                    });
+                    offset += cnt;
+                }
+                TNode::Bg(c, ref children) => {
+                    let mut last_end = 0;
+                    for bgr in TNode::bg_ranges(children) {
+                        rs.push(BgRange {
+                            start: bgr.start + offset,
+                            end: bgr.end + offset,
+                            color: Some(if let Some(ccol) = bgr.color { ccol } else { c }),
+                        });
+                        last_end = bgr.end;
+                    }
+                    offset = offset + last_end;
+                }
+                TNode::Fg(_, ref children) |
+                TNode::Bold(ref children) => {
+                    let mut last_end = 0;
+                    for bgr in TNode::bg_ranges(children) {
+                        rs.push(bgr.offset(offset));
+                        last_end = bgr.end;
+                    }
+                    offset = offset + last_end;
+                }
+            }
+        }
+        rs
+    }
+
+    /// Calculates the length of the containing text.  Panics if it detects an untransformed node.
+    pub fn len(nodes: &[TNode]) -> usize {
+        nodes.iter().fold(0, |sum, n| {
+            sum +
+            match *n {
+                TNode::Text(ref text) => text.chars().count(),
+                TNode::Fg(_, ref children) |
+                TNode::Bg(_, ref children) |
+                TNode::Bold(ref children) => TNode::len(children),
+            }
+        })
+    }
 }
 
 pub type Row = Vec<Cell>;
 
 pub type Cell = (Align, Vec<Node>);
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use brdgme_color::*;
+
+    #[test]
+    fn bg_ranges_works() {
+        assert_eq!(vec![BgRange {
+                            start: 0,
+                            end: 9,
+                            color: None,
+                        },
+                        BgRange {
+                            start: 9,
+                            end: 14,
+                            color: Some(RED),
+                        },
+                        BgRange {
+                            start: 14,
+                            end: 17,
+                            color: Some(ORANGE),
+                        },
+                        BgRange {
+                            start: 17,
+                            end: 23,
+                            color: Some(RED),
+                        },
+                        BgRange {
+                            start: 23,
+                            end: 32,
+                            color: None,
+                        }],
+                   TNode::bg_ranges(&vec![TNode::text("blah blah"),
+                                          TNode::Bg(RED,
+                                                    vec![TNode::Fg(BLUE,
+                                                                   vec![TNode::text("lolol"),
+                                                                        TNode::Bg(ORANGE,
+                                                                                  vec![
+                        TNode::text("egg"),
+                    ]),
+                                                                        TNode::text("bacon!")])]),
+                                          TNode::text("harharhar")]));
+    }
+}
