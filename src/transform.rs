@@ -130,7 +130,7 @@ fn indent(n: usize, children: &[TNode]) -> Vec<TNode> {
 
 /// `to_lines` splits text nodes into multiple text nodes, duplicating parent
 /// nodes as necessary.
-fn to_lines(nodes: &[TNode]) -> Vec<Vec<TNode>> {
+pub fn to_lines(nodes: &[TNode]) -> Vec<Vec<TNode>> {
     let mut lines: Vec<Vec<TNode>> = vec![];
     let mut line: Vec<TNode> = vec![];
     for n in nodes {
@@ -171,7 +171,7 @@ fn to_lines(nodes: &[TNode]) -> Vec<Vec<TNode>> {
     lines
 }
 
-fn from_lines(lines: &[Vec<TNode>]) -> Vec<TNode> {
+pub fn from_lines(lines: &[Vec<TNode>]) -> Vec<TNode> {
     lines.iter()
         .enumerate()
         .flat_map(|(i, l)| {

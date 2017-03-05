@@ -1,13 +1,13 @@
 extern crate brdgme_color;
 
-pub mod ast;
+mod ast;
 mod transform;
 mod ansi;
 mod html;
 mod plain;
 
-pub use transform::transform;
-use ast::TNode;
+pub use transform::{transform, from_lines, to_lines};
+pub use ast::{Node, TNode, Align, Row};
 
 pub fn html(input: &[TNode]) -> String {
     html::render(input)

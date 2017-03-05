@@ -49,23 +49,6 @@ pub enum TNode {
     Text(String),
 }
 
-#[derive(PartialEq, Debug)]
-pub struct BgRange {
-    pub start: usize,
-    pub end: usize,
-    pub color: Option<Color>,
-}
-
-impl BgRange {
-    pub fn offset(&self, offset: usize) -> BgRange {
-        BgRange {
-            start: self.start + offset,
-            end: self.end + offset,
-            ..*self
-        }
-    }
-}
-
 impl TNode {
     pub fn text<T>(t: T) -> TNode
         where T: Into<String>
@@ -124,6 +107,23 @@ impl TNode {
                 TNode::Bold(ref children) => TNode::len(children),
             }
         })
+    }
+}
+
+#[derive(PartialEq, Debug)]
+pub struct BgRange {
+    pub start: usize,
+    pub end: usize,
+    pub color: Option<Color>,
+}
+
+impl BgRange {
+    pub fn offset(&self, offset: usize) -> BgRange {
+        BgRange {
+            start: self.start + offset,
+            end: self.end + offset,
+            ..*self
+        }
     }
 }
 
