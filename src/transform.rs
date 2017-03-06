@@ -220,12 +220,10 @@ fn slice(nodes: &[TNode], range: &Range<usize>) -> Vec<TNode> {
     s
 }
 
-type CanvasLine = Vec<(usize, Vec<TNode>)>;
-
-fn canvas_line_bg_ranges(cl: &CanvasLine) -> Vec<BgRange> {
+fn canvas_line_bg_ranges(cl: &[(usize, Vec<TNode>)]) -> Vec<BgRange> {
     cl.iter()
         .flat_map(|&(offset, ref els)| {
-            TNode::bg_ranges(els).iter().map(|ref bgr| bgr.offset(offset)).collect::<Vec<BgRange>>()
+            TNode::bg_ranges(els).iter().map(|bgr| bgr.offset(offset)).collect::<Vec<BgRange>>()
         })
         .collect()
 }
@@ -246,7 +244,7 @@ fn bg_ranges_slice(bgrs: &[BgRange], range: &Range<usize>) -> Vec<BgRange> {
 
 fn canvas(els: &[(usize, usize, Vec<Node>)], players: &[String]) -> Vec<TNode> {
     // Output is split into lines each with a start position.
-    let mut lines: Vec<CanvasLine> = vec![];
+    let mut lines: Vec<Vec<(usize, Vec<TNode>)>> = vec![];
     for &(x, y, ref nodes) in els {
         let lines_len = lines.len();
         let node_lines = to_lines(&transform(nodes, players));
@@ -261,13 +259,13 @@ fn canvas(els: &[(usize, usize, Vec<Node>)], players: &[String]) -> Vec<TNode> {
             let ex_n_line_bgrs = canvas_line_bg_ranges(&lines[n_line_y]);
             let n_line: Vec<TNode> = TNode::bg_ranges(orig_n_line)
                 .iter()
-                .flat_map(|ref bgr| match bgr.color {
-                    Some(_) => slice(&orig_n_line, &(bgr.start..bgr.end)),
+                .flat_map(|bgr| match bgr.color {
+                    Some(_) => slice(orig_n_line, &(bgr.start..bgr.end)),
                     None => {
                         bg_ranges_slice(&ex_n_line_bgrs, &(bgr.start + x..bgr.end + x))
                             .iter()
-                            .flat_map(|ref ex_n_line_bgr| {
-                                let n_slice = slice(&orig_n_line,
+                            .flat_map(|ex_n_line_bgr| {
+                                let n_slice = slice(orig_n_line,
                                                     &(ex_n_line_bgr.start - x..
                                                       ex_n_line_bgr.end - x));
                                 match ex_n_line_bgr.color {

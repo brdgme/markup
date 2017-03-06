@@ -80,7 +80,7 @@ impl TNode {
                         });
                         last_end = bgr.end;
                     }
-                    offset = offset + last_end;
+                    offset += last_end;
                 }
                 TNode::Fg(_, ref children) |
                 TNode::Bold(ref children) => {
@@ -89,7 +89,7 @@ impl TNode {
                         rs.push(bgr.offset(offset));
                         last_end = bgr.end;
                     }
-                    offset = offset + last_end;
+                    offset += last_end;
                 }
             }
         }
