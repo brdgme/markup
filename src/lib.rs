@@ -1,3 +1,5 @@
+extern crate combine;
+
 extern crate brdgme_color;
 
 mod ast;
@@ -5,9 +7,13 @@ mod transform;
 mod ansi;
 mod html;
 mod plain;
+mod parser;
+
+use combine::primitives::ParseResult;
 
 pub use transform::{transform, from_lines, to_lines};
 pub use ast::{Node, TNode, Align, Row};
+use parser::parse;
 
 pub fn html(input: &[TNode]) -> String {
     html::render(input)
@@ -19,6 +25,10 @@ pub fn ansi(input: &[TNode]) -> String {
 
 pub fn plain(input: &[TNode]) -> String {
     plain::render(input)
+}
+
+pub fn from_string(input: &str) -> ParseResult<Vec<Node>, &str> {
+    parse(input)
 }
 
 pub fn to_string(input: &[Node]) -> String {

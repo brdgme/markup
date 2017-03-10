@@ -6,3 +6,4 @@ authors = ["Michael Alexander <beefsack@gmail.com>"]
 [dependencies]
 brdgme-std = { path = "../std" }
 brdgme-color = { path = "../color" }
+combine = "*"
