@@ -1,4 +1,7 @@
 extern crate combine;
+extern crate serde;
+#[macro_use]
+extern crate serde_derive;
 
 extern crate brdgme_color;
 
