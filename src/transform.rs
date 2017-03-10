@@ -67,10 +67,10 @@ fn table(rows: &[Row], players: &[String]) -> Vec<TNode> {
             for (ci, w) in widths.iter().enumerate() {
                 if let Some(&(ref al, _)) = r.get(ci) {
                     output.extend(if transformed[ri][ci].len() > line_i {
-                        align(al, *w, &transformed[ri][ci][line_i])
-                    } else {
-                        align(&Align::Left, widths[ci], &[])
-                    });
+                                      align(al, *w, &transformed[ri][ci][line_i])
+                                  } else {
+                                      align(&Align::Left, widths[ci], &[])
+                                  });
                 } else {
                     output.extend(align(&Align::Left, widths[ci], &[]));
                 }
@@ -119,13 +119,13 @@ fn align(a: &Align, width: usize, children: &[TNode]) -> Vec<TNode> {
 
 fn indent(n: usize, children: &[TNode]) -> Vec<TNode> {
     from_lines(&to_lines(children)
-        .iter()
-        .map(|l| {
-            let mut new_l = vec![TNode::Text(iter::repeat(" ").take(n).collect())];
-            new_l.extend(l.clone());
-            new_l
-        })
-        .collect::<Vec<Vec<TNode>>>())
+                    .iter()
+                    .map(|l| {
+                             let mut new_l = vec![TNode::Text(iter::repeat(" ").take(n).collect())];
+                             new_l.extend(l.clone());
+                             new_l
+                         })
+                    .collect::<Vec<Vec<TNode>>>())
 }
 
 /// `to_lines` splits text nodes into multiple text nodes, duplicating parent
@@ -136,22 +136,13 @@ pub fn to_lines(nodes: &[TNode]) -> Vec<Vec<TNode>> {
     for n in nodes {
         let n_lines: Vec<Vec<TNode>> = match *n {
             TNode::Fg(ref color, ref children) => {
-                to_lines(children)
-                    .iter()
-                    .map(|l| vec![TNode::Fg(*color, l.to_owned())])
-                    .collect()
+                to_lines(children).iter().map(|l| vec![TNode::Fg(*color, l.to_owned())]).collect()
             }
             TNode::Bg(ref color, ref children) => {
-                to_lines(children)
-                    .iter()
-                    .map(|l| vec![TNode::Bg(*color, l.to_owned())])
-                    .collect()
+                to_lines(children).iter().map(|l| vec![TNode::Bg(*color, l.to_owned())]).collect()
             }
             TNode::Bold(ref children) => {
-                to_lines(children)
-                    .iter()
-                    .map(|l| vec![TNode::Bold(l.to_owned())])
-                    .collect()
+                to_lines(children).iter().map(|l| vec![TNode::Bold(l.to_owned())]).collect()
             }
             TNode::Text(ref text) => text.split('\n').map(|l| vec![TNode::text(l)]).collect(),
         };
@@ -223,22 +214,25 @@ fn slice(nodes: &[TNode], range: &Range<usize>) -> Vec<TNode> {
 fn canvas_line_bg_ranges(cl: &[(usize, Vec<TNode>)]) -> Vec<BgRange> {
     cl.iter()
         .flat_map(|&(offset, ref els)| {
-            TNode::bg_ranges(els).iter().map(|bgr| bgr.offset(offset)).collect::<Vec<BgRange>>()
-        })
+                      TNode::bg_ranges(els)
+                          .iter()
+                          .map(|bgr| bgr.offset(offset))
+                          .collect::<Vec<BgRange>>()
+                  })
         .collect()
 }
 
 fn bg_ranges_slice(bgrs: &[BgRange], range: &Range<usize>) -> Vec<BgRange> {
     bgrs.iter()
         .filter_map(|bgr| if bgr.start >= range.end || bgr.end <= range.start {
-            None
-        } else {
-            Some(BgRange {
-                start: cmp::max(bgr.start, range.start),
-                end: cmp::min(bgr.end, range.end),
-                ..*bgr
-            })
-        })
+                        None
+                    } else {
+                        Some(BgRange {
+                                 start: cmp::max(bgr.start, range.start),
+                                 end: cmp::min(bgr.end, range.end),
+                                 ..*bgr
+                             })
+                    })
         .collect()
 }
 
@@ -260,22 +254,21 @@ fn canvas(els: &[(usize, usize, Vec<Node>)], players: &[String]) -> Vec<TNode> {
             let n_line: Vec<TNode> = TNode::bg_ranges(orig_n_line)
                 .iter()
                 .flat_map(|bgr| match bgr.color {
-                    Some(_) => slice(orig_n_line, &(bgr.start..bgr.end)),
-                    None => {
-                        bg_ranges_slice(&ex_n_line_bgrs, &(bgr.start + x..bgr.end + x))
-                            .iter()
-                            .flat_map(|ex_n_line_bgr| {
-                                let n_slice = slice(orig_n_line,
-                                                    &(ex_n_line_bgr.start - x..
-                                                      ex_n_line_bgr.end - x));
-                                match ex_n_line_bgr.color {
-                                    Some(c) => vec![TNode::Bg(c, n_slice)],
-                                    None => n_slice,
-                                }
-                            })
-                            .collect()
+                              Some(_) => slice(orig_n_line, &(bgr.start..bgr.end)),
+                              None => {
+                                  bg_ranges_slice(&ex_n_line_bgrs, &(bgr.start + x..bgr.end + x))
+                                      .iter()
+                                      .flat_map(|ex_n_line_bgr| {
+                    let n_slice = slice(orig_n_line,
+                                        &(ex_n_line_bgr.start - x..ex_n_line_bgr.end - x));
+                    match ex_n_line_bgr.color {
+                        Some(c) => vec![TNode::Bg(c, n_slice)],
+                        None => n_slice,
                     }
                 })
+                                      .collect()
+                              }
+                          })
                 .collect();
             // Remove parts of existing lines which this new line now covers.
             lines[n_line_y] = lines[n_line_y]
@@ -308,23 +301,23 @@ fn canvas(els: &[(usize, usize, Vec<Node>)], players: &[String]) -> Vec<TNode> {
         }
     }
     from_lines(&lines.iter()
-        .map(|l| {
-            let mut sorted_l = l.clone();
-            sorted_l.sort_by(|&(ref a, _), &(ref b, _)| a.cmp(b));
-            let mut last_x = 0;
-            sorted_l.iter()
-                .flat_map(|&(x, ref nodes)| {
-                    let ret_nodes = if x > last_x {
-                        indent(x - last_x, nodes)
-                    } else {
-                        nodes.clone()
-                    };
-                    last_x = x + TNode::len(nodes);
-                    ret_nodes
-                })
-                .collect()
-        })
-        .collect::<Vec<Vec<TNode>>>())
+                    .map(|l| {
+        let mut sorted_l = l.clone();
+        sorted_l.sort_by(|&(ref a, _), &(ref b, _)| a.cmp(b));
+        let mut last_x = 0;
+        sorted_l.iter()
+            .flat_map(|&(x, ref nodes)| {
+                let ret_nodes = if x > last_x {
+                    indent(x - last_x, nodes)
+                } else {
+                    nodes.clone()
+                };
+                last_x = x + TNode::len(nodes);
+                ret_nodes
+            })
+            .collect()
+    })
+                    .collect::<Vec<Vec<TNode>>>())
 }
 
 #[cfg(test)]

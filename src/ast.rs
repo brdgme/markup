@@ -8,6 +8,17 @@ pub enum Align {
     Right,
 }
 
+impl Align {
+    pub fn to_string(&self) -> String {
+        match *self {
+                Align::Left => "left",
+                Align::Center => "center",
+                Align::Right => "right",
+            }
+            .to_string()
+    }
+}
+
 impl FromStr for Align {
     type Err = String;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -64,20 +75,20 @@ impl TNode {
                 TNode::Text(ref t) => {
                     let cnt = t.chars().count();
                     rs.push(BgRange {
-                        start: offset,
-                        end: offset + cnt,
-                        color: None,
-                    });
+                                start: offset,
+                                end: offset + cnt,
+                                color: None,
+                            });
                     offset += cnt;
                 }
                 TNode::Bg(c, ref children) => {
                     let mut last_end = 0;
                     for bgr in TNode::bg_ranges(children) {
                         rs.push(BgRange {
-                            start: bgr.start + offset,
-                            end: bgr.end + offset,
-                            color: Some(if let Some(ccol) = bgr.color { ccol } else { c }),
-                        });
+                                    start: bgr.start + offset,
+                                    end: bgr.end + offset,
+                                    color: Some(if let Some(ccol) = bgr.color { ccol } else { c }),
+                                });
                         last_end = bgr.end;
                     }
                     offset += last_end;

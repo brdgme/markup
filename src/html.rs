@@ -16,9 +16,7 @@ fn b(content: &str) -> String {
 }
 
 fn escape(input: &str) -> String {
-    input.replace("&", "&amp;")
-        .replace("<", "&lt;")
-        .replace(">", "&gt;")
+    input.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 }
 
 pub fn render(input: &[TNode]) -> String {
