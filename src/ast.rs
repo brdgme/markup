@@ -32,7 +32,6 @@ impl FromStr for Align {
 }
 
 #[derive(PartialEq, Debug, Clone, Serialize, Deserialize)]
-#[serde(tag = "type", content = "values")]
 pub enum Node {
     Fg(Color, Vec<Node>),
     Bg(Color, Vec<Node>),
@@ -54,7 +53,6 @@ impl Node {
 }
 
 #[derive(PartialEq, Debug, Clone, Serialize, Deserialize)]
-#[serde(tag = "type", content = "values")]
 pub enum TNode {
     Fg(Color, Vec<TNode>),
     Bg(Color, Vec<TNode>),
