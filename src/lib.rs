@@ -14,7 +14,7 @@ mod parser;
 
 use combine::primitives::ParseResult;
 
-pub use transform::{transform, from_lines, to_lines};
+pub use transform::{transform, from_lines, to_lines, Player};
 pub use ast::{Node, TNode, Align, Row};
 use parser::parse;
 

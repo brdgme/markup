@@ -6,8 +6,8 @@ use std::iter;
 use std::ops::Range;
 
 pub struct Player {
-    name: String,
-    color: Color,
+    pub name: String,
+    pub color: Color,
 }
 
 impl Col {
