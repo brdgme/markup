@@ -39,21 +39,17 @@ pub fn to_string(input: &[Node]) -> String {
         .map(|n| match *n {
                  Node::Text(ref t) => t.to_owned(),
                  Node::Bold(ref children) => format!("{{{{b}}}}{}{{{{/b}}}}", to_string(children)),
-                 Node::Fg(c, ref children) => {
-                     format!("{{{{fg {} {} {}}}}}{}{{{{/fg}}}}",
-                             c.r,
-                             c.g,
-                             c.b,
+                 Node::Fg(ref c, ref children) => {
+                     format!("{{{{fg {}}}}}{}{{{{/fg}}}}",
+                             c.markup_args(),
                              to_string(children))
                  }
-                 Node::Bg(c, ref children) => {
-                     format!("{{{{bg {} {} {}}}}}{}{{{{/bg}}}}",
-                             c.r,
-                             c.g,
-                             c.b,
+                 Node::Bg(ref c, ref children) => {
+                     format!("{{{{bg {}}}}}{}{{{{/bg}}}}",
+                             c.markup_args(),
                              to_string(children))
                  }
-                 Node::Player(p) => format!("{{{{p {}}}}}", p),
+                 Node::Player(p) => format!("{{{{player {}}}}}", p),
                  Node::Table(ref rows) => {
                      format!("{{{{table}}}}{}{{{{/table}}}}",
                              rows.iter()
@@ -113,7 +109,7 @@ mod tests {
                           N::Player(0),
                           N::text(" and "),
                           N::Player(1)],
-                        &vec!["mick".to_string(), "steve".to_string()]));
+                        &[]));
     }
 
     #[test]
@@ -124,7 +120,7 @@ mod tests {
                           N::Player(0),
                           N::text(" and "),
                           N::Player(1)],
-                        &vec!["mick".to_string(), "steve".to_string()]));
+                        &[]));
     }
 
     #[test]
@@ -132,10 +128,9 @@ mod tests {
         println!("{}",
                  to_string(&[N::Canvas(vec![(5,
                                              10,
-                                             vec![
-                     N::Table(vec![vec![(A::Center,
-                                                 vec![N::Fg(AMBER,
-                                   vec![N::Bg(BLUE, vec![N::Bold(vec![N::text("moo")])])])])]])
-             ])])]));
+                                             vec![N::Table(vec![vec![(A::Center,
+                                                                      vec![N::Fg(AMBER.into(),
+                                   vec![N::Bg(BLUE.into(), vec![
+                                       N::Bold(vec![N::text("moo")])])])])]])])])]));
     }
 }

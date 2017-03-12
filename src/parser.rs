@@ -7,7 +7,7 @@ use std::str::FromStr;
 
 use brdgme_color::*;
 
-use ast::{Node, Row, Cell, Align};
+use ast::{Node, Row, Cell, Align, Col, ColType, ColTrans};
 
 pub fn parse<I>(input: I) -> ParseResult<Vec<Node>, I>
     where I: Stream<Item = char>
@@ -38,37 +38,64 @@ fn parse_usize<I>(input: I) -> ParseResult<usize, I>
 fn fg<I>(input: I) -> ParseResult<Node, I>
     where I: Stream<Item = char>
 {
-    (try(string("{{fg ")),
-     parser(parse_u8),
-     string(" "),
-     parser(parse_u8),
-     string(" "),
-     parser(parse_u8),
-     string("}}"),
-     parser(parse),
-     string("{{/fg}}"))
-            .map(|(_, r, _, g, _, b, _, children, _)| {
-                     Node::Fg(Color { r: r, g: g, b: b }, children)
-                 })
-            .parse_stream(input)
+    (try(string("{{fg ")), parser(col_args), string("}}"), parser(parse), string("{{/fg}}"))
+        .map(|(_, c, _, children, _)| Node::Fg(c, children))
+        .parse_stream(input)
 }
 
 fn bg<I>(input: I) -> ParseResult<Node, I>
     where I: Stream<Item = char>
 {
-    (try(string("{{bg ")),
+    (try(string("{{bg ")), parser(col_args), string("}}"), parser(parse), string("{{/bg}}"))
+        .map(|(_, c, _, children, _)| Node::Bg(c, children))
+        .parse_stream(input)
+}
+
+fn col_args<I>(input: I) -> ParseResult<Col, I>
+    where I: Stream<Item = char>
+{
+    (choice([col_type_player, col_type_rgb]), many(parser(col_trans)))
+        .map(|(ct, trans)| {
+                 Col {
+                     color: ct,
+                     transform: trans,
+                 }
+             })
+        .parse_stream(input)
+}
+
+fn col_type_player<I>(input: I) -> ParseResult<ColType, I>
+    where I: Stream<Item = char>
+{
+    (try(string("player(")), parser(parse_usize), string(")"))
+        .map(|(_, p, _)| ColType::Player(p))
+        .parse_stream(input)
+}
+
+fn col_type_rgb<I>(input: I) -> ParseResult<ColType, I>
+    where I: Stream<Item = char>
+{
+    (try(string("rgb(")),
      parser(parse_u8),
-     string(" "),
+     string(","),
      parser(parse_u8),
-     string(" "),
+     string(","),
      parser(parse_u8),
-     string("}}"),
-     parser(parse),
-     string("{{/bg}}"))
-            .map(|(_, r, _, g, _, b, _, children, _)| {
-                     Node::Bg(Color { r: r, g: g, b: b }, children)
-                 })
+     string(")"))
+            .map(|(_, r, _, g, _, b, _)| ColType::RGB(Color { r: r, g: g, b: b }))
             .parse_stream(input)
+}
+
+fn col_trans<I>(input: I) -> ParseResult<ColTrans, I>
+    where I: Stream<Item = char>
+{
+    (try(string(" | ")), choice([string("mono"), string("inv")]))
+        .map(|(_, t)| match t {
+                 "mono" => ColTrans::Mono,
+                 "inv" => ColTrans::Inv,
+                 _ => panic!("invalid transform"),
+             })
+        .parse_stream(input)
 }
 
 /// Backwards compatibility with Go brdgme. Magenta is handled manually as it doesn't exist in this
@@ -87,7 +114,8 @@ fn c<I>(input: I) -> ParseResult<Node, I>
                                  _ => named(&col),
                              }
                              .unwrap_or(&BLACK)
-                             .to_owned(),
+                             .to_owned()
+                             .into(),
                          children)
             })
             .parse_stream(input)
@@ -190,10 +218,32 @@ fn text<I>(input: I) -> ParseResult<Node, I>
 #[cfg(test)]
 mod tests {
     use super::*;
+    use super::super::to_string;
+    use combine::parser;
+
+    use ast::{Node as N, Align as A, Col, ColType, ColTrans};
 
     #[test]
     fn parse_works() {
-        println!("{:?}",
-                 parse("{{canvas}}{{layer 5 10}}{{table}}{{row}}{{cell center}}{{fg 255 160 0}}{{bg 25 118 210}}{{b}}{{c magenta}}moo{{/c}}{{/b}}{{/bg}}{{/fg}}{{/cell}}{{/row}}{{/table}}{{/layer}}{{/canvas}} And something else {{align right 10}}rrrr{{/align}}"));
+        let expected: Vec<Node> = vec![N::Canvas(vec![(5,
+                                                       10,
+                                                       vec![N::Table(vec![vec![(A::Center,
+                                                                                vec![
+                                N::Fg(RED.into(), vec![
+                                    N::Bg(Col {
+                                        color: ColType::Player(2),
+                                        transform: vec![ColTrans::Inv, ColTrans::Mono],
+                                    }, vec![
+                                        N::Player(5),
+                                        N::Align(A::Right, 10, vec![
+                                            N::Indent(10, vec![
+                                                N::text("this is some text")
+                                            ]),
+                                        ]),
+                                    ])
+                                ])
+                            ])]])])])];
+        assert_eq!(Ok((expected.clone(), "")),
+                   parser(parse).parse(to_string(&expected).as_ref()));
     }
 }

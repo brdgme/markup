@@ -32,9 +32,74 @@ impl FromStr for Align {
 }
 
 #[derive(PartialEq, Debug, Clone, Serialize, Deserialize)]
+pub enum ColTrans {
+    Mono,
+    Inv,
+}
+
+#[derive(PartialEq, Debug, Clone, Serialize, Deserialize)]
+pub enum ColType {
+    RGB(Color),
+    Player(usize),
+}
+
+#[derive(PartialEq, Debug, Clone, Serialize, Deserialize)]
+pub struct Col {
+    pub color: ColType,
+    pub transform: Vec<ColTrans>,
+}
+
+impl Col {
+    pub fn markup_args(&self) -> String {
+        format!("{}{}",
+                self.markup_col_type(),
+                match self.transform.len() {
+                    0 => "".to_string(),
+                    _ => format!(" | {}", self.markup_trans()),
+                })
+    }
+
+    fn markup_col_type(&self) -> String {
+        match self.color {
+            ColType::RGB(c) => format!("rgb({},{},{})", c.r, c.g, c.b),
+            ColType::Player(p) => format!("player({})", p),
+        }
+    }
+
+    fn markup_trans(&self) -> String {
+        self.transform
+            .iter()
+            .map(|t| match *t {
+                     ColTrans::Mono => "mono".to_string(),
+                     ColTrans::Inv => "inv".to_string(),
+                 })
+            .collect::<Vec<String>>()
+            .join(" | ")
+    }
+}
+
+impl From<usize> for Col {
+    fn from(u: usize) -> Col {
+        Col {
+            color: ColType::Player(u),
+            transform: vec![],
+        }
+    }
+}
+
+impl From<Color> for Col {
+    fn from(c: Color) -> Col {
+        Col {
+            color: ColType::RGB(c),
+            transform: vec![],
+        }
+    }
+}
+
+#[derive(PartialEq, Debug, Clone, Serialize, Deserialize)]
 pub enum Node {
-    Fg(Color, Vec<Node>),
-    Bg(Color, Vec<Node>),
+    Fg(Col, Vec<Node>),
+    Bg(Col, Vec<Node>),
     Bold(Vec<Node>),
     Text(String),
     Player(usize),

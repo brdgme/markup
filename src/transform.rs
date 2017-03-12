@@ -1,17 +1,44 @@
-use ast::{Node, TNode, Row, Align, BgRange};
-use brdgme_color::player_color;
+use ast::{Node, TNode, Row, Align, BgRange, Col, ColType, ColTrans};
+use brdgme_color::{Color, player_color};
 
 use std::cmp;
 use std::iter;
 use std::ops::Range;
 
-pub fn transform(input: &[Node], players: &[String]) -> Vec<TNode> {
+pub struct Player {
+    name: String,
+    color: Color,
+}
+
+impl Col {
+    fn to_color(&self, players: &[Player]) -> Color {
+        let mut c = match self.color {
+            ColType::Player(p) => {
+                players.get(p).map(|p| p.color).unwrap_or_else(|| player_color(p).to_owned())
+            }
+            ColType::RGB(c) => c,
+        };
+        for tf in self.transform.iter() {
+            c = match *tf {
+                ColTrans::Mono => c.mono(),
+                ColTrans::Inv => c.inv(),
+            }
+        }
+        c
+    }
+}
+
+pub fn transform(input: &[Node], players: &[Player]) -> Vec<TNode> {
     let mut ret: Vec<TNode> = vec![];
     for n in input {
         match *n {
             // Direct copy nodes.
-            Node::Fg(c, ref children) => ret.push(TNode::Fg(c, transform(children, players))),
-            Node::Bg(c, ref children) => ret.push(TNode::Bg(c, transform(children, players))),
+            Node::Fg(ref c, ref children) => {
+                ret.push(TNode::Fg(c.to_color(players), transform(children, players)))
+            }
+            Node::Bg(ref c, ref children) => {
+                ret.push(TNode::Bg(c.to_color(players), transform(children, players)))
+            }
             Node::Bold(ref children) => ret.push(TNode::Bold(transform(children, players))),
             Node::Text(ref t) => ret.push(TNode::Text(t.to_string())),
             Node::Player(p) => ret.extend(player(p, players)),
@@ -24,18 +51,14 @@ pub fn transform(input: &[Node], players: &[String]) -> Vec<TNode> {
     ret
 }
 
-fn player(p: usize, players: &[String]) -> Vec<TNode> {
-    let p_len = players.len();
-    let p_name = if p < p_len {
-        players[p].to_string()
-    } else {
-        format!("Player {}", p)
-    };
-    vec![TNode::Bold(vec![TNode::Fg(player_color(p).to_owned(),
-                                    vec![TNode::text(format!("• {}", p_name))])])]
+fn player(p: usize, players: &[Player]) -> Vec<TNode> {
+    let p_name =
+        players.get(p).map(|p| p.name.to_string()).unwrap_or_else(|| format!("Player {}", p));
+    let p_col = players.get(p).map(|p| p.color).unwrap_or_else(|| player_color(p).to_owned());
+    vec![TNode::Bold(vec![TNode::Fg(p_col, vec![TNode::text(format!("• {}", p_name))])])]
 }
 
-fn table(rows: &[Row], players: &[String]) -> Vec<TNode> {
+fn table(rows: &[Row], players: &[Player]) -> Vec<TNode> {
     // Transform individual cells and calculate row heights and column widths.
     let mut transformed: Vec<Vec<Vec<Vec<TNode>>>> = vec![];
     let mut widths: Vec<usize> = vec![];
@@ -236,7 +259,7 @@ fn bg_ranges_slice(bgrs: &[BgRange], range: &Range<usize>) -> Vec<BgRange> {
         .collect()
 }
 
-fn canvas(els: &[(usize, usize, Vec<Node>)], players: &[String]) -> Vec<TNode> {
+fn canvas(els: &[(usize, usize, Vec<Node>)], players: &[Player]) -> Vec<TNode> {
     // Output is split into lines each with a start position.
     let mut lines: Vec<Vec<(usize, Vec<TNode>)>> = vec![];
     for &(x, y, ref nodes) in els {
@@ -342,7 +365,7 @@ mod tests {
         assert_eq!("           blah     \nheadersome long text".to_string(),
                    render(&transform(&vec![N::Table(vec![vec![(A::Left, vec![]),
                                                               (A::Center,
-                                                               vec![N::Fg(GREY,
+                                                               vec![N::Fg(GREY.into(),
                                                                           vec![N::text("blah")])])],
                                                          vec![(A::Right,
                                                                vec![N::text("header")]),
