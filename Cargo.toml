@@ -4,8 +4,8 @@ version = "0.1.0"
 authors = ["Michael Alexander <beefsack@gmail.com>"]
 
 [dependencies]
-brdgme-std = { path = "../std" }
-brdgme-color = { path = "../color" }
+brdgme-std = { git = "https://github.com/brdgme/std.git" }
+brdgme-color = { git = "https://github.com/brdgme/color.git" }
 serde = "*"
 serde_derive = "*"
 combine = "*"
