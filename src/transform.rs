@@ -63,7 +63,7 @@ fn player(p: usize, players: &[Player]) -> Vec<TNode> {
         .get(p)
         .map(|p| p.color)
         .unwrap_or_else(|| player_color(p).to_owned());
-    vec![TNode::Bold(vec![TNode::Fg(p_col, vec![TNode::text(format!("• {}", p_name))])])]
+    vec![TNode::Bold(vec![TNode::Fg(p_col, vec![TNode::text(format!("<{}>", p_name))])])]
 }
 
 fn table(rows: &[Row], players: &[Player]) -> Vec<TNode> {
