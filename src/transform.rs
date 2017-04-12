@@ -14,11 +14,14 @@ impl Col {
     fn to_color(&self, players: &[Player]) -> Color {
         let mut c = match self.color {
             ColType::Player(p) => {
-                players.get(p).map(|p| p.color).unwrap_or_else(|| player_color(p).to_owned())
+                players
+                    .get(p)
+                    .map(|p| p.color)
+                    .unwrap_or_else(|| player_color(p).to_owned())
             }
             ColType::RGB(c) => c,
         };
-        for tf in self.transform.iter() {
+        for tf in &self.transform {
             c = match *tf {
                 ColTrans::Mono => c.mono(),
                 ColTrans::Inv => c.inv(),
@@ -52,9 +55,14 @@ pub fn transform(input: &[Node], players: &[Player]) -> Vec<TNode> {
 }
 
 fn player(p: usize, players: &[Player]) -> Vec<TNode> {
-    let p_name =
-        players.get(p).map(|p| p.name.to_string()).unwrap_or_else(|| format!("Player {}", p));
-    let p_col = players.get(p).map(|p| p.color).unwrap_or_else(|| player_color(p).to_owned());
+    let p_name = players
+        .get(p)
+        .map(|p| p.name.to_string())
+        .unwrap_or_else(|| format!("Player {}", p));
+    let p_col = players
+        .get(p)
+        .map(|p| p.color)
+        .unwrap_or_else(|| player_color(p).to_owned());
     vec![TNode::Bold(vec![TNode::Fg(p_col, vec![TNode::text(format!("• {}", p_name))])])]
 }
 
@@ -69,7 +77,9 @@ fn table(rows: &[Row], players: &[Player]) -> Vec<TNode> {
         for (i, &(_, ref children)) in r.iter().enumerate() {
             let cell_lines = to_lines(&transform(children, players));
             row_height = cmp::max(row_height, cell_lines.len());
-            let width = cell_lines.iter().fold(0, |width, l| cmp::max(width, TNode::len(l)));
+            let width = cell_lines
+                .iter()
+                .fold(0, |width, l| cmp::max(width, TNode::len(l)));
             if i >= widths.len() {
                 widths.push(width);
             } else {
@@ -159,13 +169,22 @@ pub fn to_lines(nodes: &[TNode]) -> Vec<Vec<TNode>> {
     for n in nodes {
         let n_lines: Vec<Vec<TNode>> = match *n {
             TNode::Fg(ref color, ref children) => {
-                to_lines(children).iter().map(|l| vec![TNode::Fg(*color, l.to_owned())]).collect()
+                to_lines(children)
+                    .iter()
+                    .map(|l| vec![TNode::Fg(*color, l.to_owned())])
+                    .collect()
             }
             TNode::Bg(ref color, ref children) => {
-                to_lines(children).iter().map(|l| vec![TNode::Bg(*color, l.to_owned())]).collect()
+                to_lines(children)
+                    .iter()
+                    .map(|l| vec![TNode::Bg(*color, l.to_owned())])
+                    .collect()
             }
             TNode::Bold(ref children) => {
-                to_lines(children).iter().map(|l| vec![TNode::Bold(l.to_owned())]).collect()
+                to_lines(children)
+                    .iter()
+                    .map(|l| vec![TNode::Bold(l.to_owned())])
+                    .collect()
             }
             TNode::Text(ref text) => text.split('\n').map(|l| vec![TNode::text(l)]).collect(),
         };
@@ -186,7 +205,8 @@ pub fn to_lines(nodes: &[TNode]) -> Vec<Vec<TNode>> {
 }
 
 pub fn from_lines(lines: &[Vec<TNode>]) -> Vec<TNode> {
-    lines.iter()
+    lines
+        .iter()
         .enumerate()
         .flat_map(|(i, l)| {
             let mut new_l = if i == 0 {
@@ -323,12 +343,14 @@ fn canvas(els: &[(usize, usize, Vec<Node>)], players: &[Player]) -> Vec<TNode> {
             lines[n_line_y].push((x, n_line.clone()));
         }
     }
-    from_lines(&lines.iter()
+    from_lines(&lines
+                    .iter()
                     .map(|l| {
         let mut sorted_l = l.clone();
         sorted_l.sort_by(|&(ref a, _), &(ref b, _)| a.cmp(b));
         let mut last_x = 0;
-        sorted_l.iter()
+        sorted_l
+            .iter()
             .flat_map(|&(x, ref nodes)| {
                 let ret_nodes = if x > last_x {
                     indent(x - last_x, nodes)

@@ -26,13 +26,17 @@ fn bold<I>(input: I) -> ParseResult<Node, I>
 fn parse_u8<I>(input: I) -> ParseResult<u8, I>
     where I: Stream<Item = char>
 {
-    many1(digit()).and_then(|s: String| s.parse::<u8>()).parse_stream(input)
+    many1(digit())
+        .and_then(|s: String| s.parse::<u8>())
+        .parse_stream(input)
 }
 
 fn parse_usize<I>(input: I) -> ParseResult<usize, I>
     where I: Stream<Item = char>
 {
-    many1(digit()).and_then(|s: String| s.parse::<usize>()).parse_stream(input)
+    many1(digit())
+        .and_then(|s: String| s.parse::<usize>())
+        .parse_stream(input)
 }
 
 fn fg<I>(input: I) -> ParseResult<Node, I>
@@ -212,7 +216,9 @@ fn align_arg<I>(input: I) -> ParseResult<Align, I>
 fn text<I>(input: I) -> ParseResult<Node, I>
     where I: Stream<Item = char>
 {
-    many1(none_of("{".chars())).map(Node::Text).parse_stream(input)
+    many1(none_of("{".chars()))
+        .map(Node::Text)
+        .parse_stream(input)
 }
 
 #[cfg(test)]

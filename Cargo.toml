@@ -8,3 +8,4 @@ brdgme-color = { git = "https://github.com/brdgme/color.git" }
 serde = "0.9.13"
 serde_derive = "0.9.13"
 combine = "2.3.1"
+error-chain = "0.10.0"

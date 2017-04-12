@@ -174,15 +174,17 @@ impl TNode {
 
     /// Calculates the length of the containing text.  Panics if it detects an untransformed node.
     pub fn len(nodes: &[TNode]) -> usize {
-        nodes.iter().fold(0, |sum, n| {
-            sum +
-            match *n {
-                TNode::Text(ref text) => text.chars().count(),
-                TNode::Fg(_, ref children) |
-                TNode::Bg(_, ref children) |
-                TNode::Bold(ref children) => TNode::len(children),
-            }
-        })
+        nodes
+            .iter()
+            .fold(0, |sum, n| {
+                sum +
+                match *n {
+                    TNode::Text(ref text) => text.chars().count(),
+                    TNode::Fg(_, ref children) |
+                    TNode::Bg(_, ref children) |
+                    TNode::Bold(ref children) => TNode::len(children),
+                }
+            })
     }
 }
 

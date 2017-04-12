@@ -2,6 +2,8 @@ extern crate combine;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
+#[macro_use]
+extern crate error_chain;
 
 extern crate brdgme_color;
 
@@ -12,11 +14,14 @@ mod html;
 mod plain;
 mod parser;
 
-use combine::primitives::ParseResult;
-
 pub use transform::{transform, from_lines, to_lines, Player};
 pub use ast::{Node, TNode, Align, Row};
 use parser::parse;
+
+pub mod errors {
+    error_chain!{}
+}
+use errors::*;
 
 pub fn html(input: &[TNode]) -> String {
     html::render(input)
@@ -30,12 +35,15 @@ pub fn plain(input: &[TNode]) -> String {
     plain::render(input)
 }
 
-pub fn from_string(input: &str) -> ParseResult<Vec<Node>, &str> {
+pub fn from_string(input: &str) -> Result<(Vec<Node>, &str)> {
     parse(input)
+        .map(|(nodes, remaining)| (nodes, remaining.into_inner()))
+        .map_err(|_| ErrorKind::Msg("".to_string()).into())
 }
 
 pub fn to_string(input: &[Node]) -> String {
-    input.iter()
+    input
+        .iter()
         .map(|n| match *n {
                  Node::Text(ref t) => t.to_owned(),
                  Node::Bold(ref children) => format!("{{{{b}}}}{}{{{{/b}}}}", to_string(children)),
@@ -80,7 +88,8 @@ pub fn to_string(input: &[Node]) -> String {
                  }
                  Node::Canvas(ref layers) => {
                      format!("{{{{canvas}}}}{}{{{{/canvas}}}}",
-                             layers.iter()
+                             layers
+                                 .iter()
                                  .map(|&(x, y, ref children)| {
                                           format!("{{{{layer {} {}}}}}{}{{{{/layer}}}}",
                                                   x,
