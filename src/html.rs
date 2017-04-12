@@ -23,13 +23,7 @@ fn escape(input: &str) -> String {
 }
 
 pub fn render(input: &[TNode]) -> String {
-    format!("<div style=\"\
-background-color:#ffffff;\
-color:#000000;\
-white-space:pre-wrap;\
-font-family:monospace;\
-\">{}</div>",
-            render_nodes(input))
+    render_nodes(input)
 }
 
 fn render_nodes(input: &[TNode]) -> String {
