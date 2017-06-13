@@ -388,7 +388,7 @@ mod tests {
                    render(&transform(&vec![N::Table(vec![vec![(A::Left, vec![]),
                                                               (A::Center,
                                                                vec![N::Fg(GREY.into(),
-                                                                          vec![N::text("blah")])])],
+                                                                          vec![N::text("blah",)])])],
                                                          vec![(A::Right,
                                                                vec![N::text("header")]),
                                                               (A::Center,

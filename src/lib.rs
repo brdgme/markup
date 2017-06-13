@@ -15,7 +15,7 @@ mod plain;
 mod parser;
 
 pub use transform::{transform, from_lines, to_lines, Player};
-pub use ast::{Node, TNode, Align, Row};
+pub use ast::{Node, TNode, Align, Row, row_pad, row_pad_cell};
 use parser::parse;
 
 pub mod errors {

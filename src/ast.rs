@@ -51,12 +51,10 @@ pub struct Col {
 
 impl Col {
     pub fn markup_args(&self) -> String {
-        format!("{}{}",
-                self.markup_col_type(),
-                match self.transform.len() {
-                    0 => "".to_string(),
-                    _ => format!(" | {}", self.markup_trans()),
-                })
+        format!("{}{}", self.markup_col_type(), match self.transform.len() {
+            0 => "".to_string(),
+            _ => format!(" | {}", self.markup_trans()),
+        })
     }
 
     fn markup_col_type(&self) -> String {
@@ -207,6 +205,24 @@ impl BgRange {
 
 pub type Row = Vec<Cell>;
 
+pub fn row_pad(row: &Row, pad: &str) -> Row {
+    row_pad_cell(row, &(Align::Left, vec![Node::text(pad)]))
+}
+
+pub fn row_pad_cell(row: &Row, pad: &Cell) -> Row {
+    row.iter()
+        .enumerate()
+        .flat_map(|(i, c)| {
+                      let mut cells: Row = vec![];
+                      if i > 0 {
+                          cells.push(pad.to_owned());
+                      }
+                      cells.push(c.to_owned());
+                      cells
+                  })
+        .collect()
+}
+
 pub type Cell = (Align, Vec<Node>);
 
 #[cfg(test)]
@@ -249,7 +265,7 @@ mod tests {
                                                                                   vec![
                         TNode::text("egg"),
                     ]),
-                                                                        TNode::text("bacon!")])]),
+                                                                        TNode::text("bacon!",)])]),
                                           TNode::text("harharhar")]));
     }
 }
