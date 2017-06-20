@@ -3,9 +3,11 @@ use brdgme_color::Style;
 
 pub fn render(input: &[TNode]) -> String {
     let default_style = Style::default();
-    format!("{}{}",
-            default_style.ansi(),
-            render_styled(input, default_style))
+    format!(
+        "{}{}",
+        default_style.ansi(),
+        render_styled(input, default_style)
+    )
 }
 
 fn render_styled(input: &[TNode], last_style: Style) -> String {

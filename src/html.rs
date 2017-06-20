@@ -6,9 +6,11 @@ fn fg(color: &Color, content: &str) -> String {
 }
 
 fn bg(color: &Color, content: &str) -> String {
-    return format!(r#"<span style="background-color:{};">{}</span>"#,
-                   color,
-                   content);
+    return format!(
+        r#"<span style="background-color:{};">{}</span>"#,
+        color,
+        content
+    );
 }
 
 fn b(content: &str) -> String {

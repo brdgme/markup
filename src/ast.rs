@@ -11,11 +11,10 @@ pub enum Align {
 impl Align {
     pub fn to_string(&self) -> String {
         match *self {
-                Align::Left => "left",
-                Align::Center => "center",
-                Align::Right => "right",
-            }
-            .to_string()
+            Align::Left => "left",
+            Align::Center => "center",
+            Align::Right => "right",
+        }.to_string()
     }
 }
 
@@ -26,7 +25,10 @@ impl FromStr for Align {
             "left" => Ok(Align::Left),
             "center" => Ok(Align::Center),
             "right" => Ok(Align::Right),
-            _ => Err(format!("invalid align {}, must be one of left, center, right", s)),
+            _ => Err(format!(
+                "invalid align {}, must be one of left, center, right",
+                s
+            )),
         }
     }
 }
@@ -51,10 +53,14 @@ pub struct Col {
 
 impl Col {
     pub fn markup_args(&self) -> String {
-        format!("{}{}", self.markup_col_type(), match self.transform.len() {
-            0 => "".to_string(),
-            _ => format!(" | {}", self.markup_trans()),
-        })
+        format!(
+            "{}{}",
+            self.markup_col_type(),
+            match self.transform.len() {
+                0 => "".to_string(),
+                _ => format!(" | {}", self.markup_trans()),
+            }
+        )
     }
 
     fn markup_col_type(&self) -> String {
@@ -68,9 +74,9 @@ impl Col {
         self.transform
             .iter()
             .map(|t| match *t {
-                     ColTrans::Mono => "mono".to_string(),
-                     ColTrans::Inv => "inv".to_string(),
-                 })
+                ColTrans::Mono => "mono".to_string(),
+                ColTrans::Inv => "inv".to_string(),
+            })
             .collect::<Vec<String>>()
             .join(" | ")
     }
@@ -98,6 +104,7 @@ impl From<Color> for Col {
 pub enum Node {
     Fg(Col, Vec<Node>),
     Bg(Col, Vec<Node>),
+    Group(Vec<Node>),
     Bold(Vec<Node>),
     Text(String),
     Player(usize),
@@ -109,7 +116,8 @@ pub enum Node {
 
 impl Node {
     pub fn text<T>(t: T) -> Node
-        where T: Into<String>
+    where
+        T: Into<String>,
     {
         Node::Text(t.into())
     }
@@ -125,7 +133,8 @@ pub enum TNode {
 
 impl TNode {
     pub fn text<T>(t: T) -> TNode
-        where T: Into<String>
+    where
+        T: Into<String>,
     {
         TNode::Text(t.into())
     }
@@ -138,20 +147,20 @@ impl TNode {
                 TNode::Text(ref t) => {
                     let cnt = t.chars().count();
                     rs.push(BgRange {
-                                start: offset,
-                                end: offset + cnt,
-                                color: None,
-                            });
+                        start: offset,
+                        end: offset + cnt,
+                        color: None,
+                    });
                     offset += cnt;
                 }
                 TNode::Bg(c, ref children) => {
                     let mut last_end = 0;
                     for bgr in TNode::bg_ranges(children) {
                         rs.push(BgRange {
-                                    start: bgr.start + offset,
-                                    end: bgr.end + offset,
-                                    color: Some(if let Some(ccol) = bgr.color { ccol } else { c }),
-                                });
+                            start: bgr.start + offset,
+                            end: bgr.end + offset,
+                            color: Some(if let Some(ccol) = bgr.color { ccol } else { c }),
+                        });
                         last_end = bgr.end;
                     }
                     offset += last_end;
@@ -172,17 +181,15 @@ impl TNode {
 
     /// Calculates the length of the containing text.  Panics if it detects an untransformed node.
     pub fn len(nodes: &[TNode]) -> usize {
-        nodes
-            .iter()
-            .fold(0, |sum, n| {
-                sum +
+        nodes.iter().fold(0, |sum, n| {
+            sum +
                 match *n {
                     TNode::Text(ref text) => text.chars().count(),
                     TNode::Fg(_, ref children) |
                     TNode::Bg(_, ref children) |
                     TNode::Bold(ref children) => TNode::len(children),
                 }
-            })
+        })
     }
 }
 
@@ -205,21 +212,21 @@ impl BgRange {
 
 pub type Row = Vec<Cell>;
 
-pub fn row_pad(row: &Row, pad: &str) -> Row {
+pub fn row_pad(row: &[Cell], pad: &str) -> Row {
     row_pad_cell(row, &(Align::Left, vec![Node::text(pad)]))
 }
 
-pub fn row_pad_cell(row: &Row, pad: &Cell) -> Row {
+pub fn row_pad_cell(row: &[Cell], pad: &Cell) -> Row {
     row.iter()
         .enumerate()
         .flat_map(|(i, c)| {
-                      let mut cells: Row = vec![];
-                      if i > 0 {
-                          cells.push(pad.to_owned());
-                      }
-                      cells.push(c.to_owned());
-                      cells
-                  })
+            let mut cells: Row = vec![];
+            if i > 0 {
+                cells.push(pad.to_owned());
+            }
+            cells.push(c.to_owned());
+            cells
+        })
         .collect()
 }
 
@@ -232,40 +239,51 @@ mod tests {
 
     #[test]
     fn bg_ranges_works() {
-        assert_eq!(vec![BgRange {
-                            start: 0,
-                            end: 9,
-                            color: None,
-                        },
-                        BgRange {
-                            start: 9,
-                            end: 14,
-                            color: Some(RED),
-                        },
-                        BgRange {
-                            start: 14,
-                            end: 17,
-                            color: Some(ORANGE),
-                        },
-                        BgRange {
-                            start: 17,
-                            end: 23,
-                            color: Some(RED),
-                        },
-                        BgRange {
-                            start: 23,
-                            end: 32,
-                            color: None,
-                        }],
-                   TNode::bg_ranges(&vec![TNode::text("blah blah"),
-                                          TNode::Bg(RED,
-                                                    vec![TNode::Fg(BLUE,
-                                                                   vec![TNode::text("lolol"),
-                                                                        TNode::Bg(ORANGE,
-                                                                                  vec![
-                        TNode::text("egg"),
-                    ]),
-                                                                        TNode::text("bacon!",)])]),
-                                          TNode::text("harharhar")]));
+        assert_eq!(
+            vec![
+                BgRange {
+                    start: 0,
+                    end: 9,
+                    color: None,
+                },
+                BgRange {
+                    start: 9,
+                    end: 14,
+                    color: Some(RED),
+                },
+                BgRange {
+                    start: 14,
+                    end: 17,
+                    color: Some(ORANGE),
+                },
+                BgRange {
+                    start: 17,
+                    end: 23,
+                    color: Some(RED),
+                },
+                BgRange {
+                    start: 23,
+                    end: 32,
+                    color: None,
+                },
+            ],
+            TNode::bg_ranges(&vec![
+                TNode::text("blah blah"),
+                TNode::Bg(
+                    RED,
+                    vec![
+                        TNode::Fg(
+                            BLUE,
+                            vec![
+                                TNode::text("lolol"),
+                                TNode::Bg(ORANGE, vec![TNode::text("egg")]),
+                                TNode::text("bacon!"),
+                            ]
+                        ),
+                    ]
+                ),
+                TNode::text("harharhar"),
+            ])
+        );
     }
 }

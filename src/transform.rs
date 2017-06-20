@@ -43,6 +43,7 @@ pub fn transform(input: &[Node], players: &[Player]) -> Vec<TNode> {
                 ret.push(TNode::Bg(c.to_color(players), transform(children, players)))
             }
             Node::Bold(ref children) => ret.push(TNode::Bold(transform(children, players))),
+            Node::Group(ref children) => ret.extend(transform(children, players)),
             Node::Text(ref t) => ret.push(TNode::Text(t.to_string())),
             Node::Player(p) => ret.extend(player(p, players)),
             Node::Align(ref a, w, ref c) => ret.extend(align(a, w, &transform(c, players))),
@@ -63,7 +64,14 @@ fn player(p: usize, players: &[Player]) -> Vec<TNode> {
         .get(p)
         .map(|p| p.color)
         .unwrap_or_else(|| player_color(p).to_owned());
-    vec![TNode::Bold(vec![TNode::Fg(p_col, vec![TNode::text(format!("<{}>", p_name))])])]
+    vec![
+        TNode::Bold(vec![
+            TNode::Fg(
+                p_col,
+                vec![TNode::text(format!("<{}>", p_name))]
+            ),
+        ]),
+    ]
 }
 
 fn table(rows: &[Row], players: &[Player]) -> Vec<TNode> {
@@ -100,10 +108,10 @@ fn table(rows: &[Row], players: &[Player]) -> Vec<TNode> {
             for (ci, w) in widths.iter().enumerate() {
                 if let Some(&(ref al, _)) = r.get(ci) {
                     output.extend(if transformed[ri][ci].len() > line_i {
-                                      align(al, *w, &transformed[ri][ci][line_i])
-                                  } else {
-                                      align(&Align::Left, widths[ci], &[])
-                                  });
+                        align(al, *w, &transformed[ri][ci][line_i])
+                    } else {
+                        align(&Align::Left, widths[ci], &[])
+                    });
                 } else {
                     output.extend(align(&Align::Left, widths[ci], &[]));
                 }
@@ -152,13 +160,13 @@ fn align(a: &Align, width: usize, children: &[TNode]) -> Vec<TNode> {
 
 fn indent(n: usize, children: &[TNode]) -> Vec<TNode> {
     from_lines(&to_lines(children)
-                    .iter()
-                    .map(|l| {
-                             let mut new_l = vec![TNode::Text(iter::repeat(" ").take(n).collect())];
-                             new_l.extend(l.clone());
-                             new_l
-                         })
-                    .collect::<Vec<Vec<TNode>>>())
+        .iter()
+        .map(|l| {
+            let mut new_l = vec![TNode::Text(iter::repeat(" ").take(n).collect())];
+            new_l.extend(l.clone());
+            new_l
+        })
+        .collect::<Vec<Vec<TNode>>>())
 }
 
 /// `to_lines` splits text nodes into multiple text nodes, duplicating parent
@@ -257,25 +265,25 @@ fn slice(nodes: &[TNode], range: &Range<usize>) -> Vec<TNode> {
 fn canvas_line_bg_ranges(cl: &[(usize, Vec<TNode>)]) -> Vec<BgRange> {
     cl.iter()
         .flat_map(|&(offset, ref els)| {
-                      TNode::bg_ranges(els)
-                          .iter()
-                          .map(|bgr| bgr.offset(offset))
-                          .collect::<Vec<BgRange>>()
-                  })
+            TNode::bg_ranges(els)
+                .iter()
+                .map(|bgr| bgr.offset(offset))
+                .collect::<Vec<BgRange>>()
+        })
         .collect()
 }
 
 fn bg_ranges_slice(bgrs: &[BgRange], range: &Range<usize>) -> Vec<BgRange> {
     bgrs.iter()
         .filter_map(|bgr| if bgr.start >= range.end || bgr.end <= range.start {
-                        None
-                    } else {
-                        Some(BgRange {
-                                 start: cmp::max(bgr.start, range.start),
-                                 end: cmp::min(bgr.end, range.end),
-                                 ..*bgr
-                             })
-                    })
+            None
+        } else {
+            Some(BgRange {
+                start: cmp::max(bgr.start, range.start),
+                end: cmp::min(bgr.end, range.end),
+                ..*bgr
+            })
+        })
         .collect()
 }
 
@@ -297,21 +305,23 @@ fn canvas(els: &[(usize, usize, Vec<Node>)], players: &[Player]) -> Vec<TNode> {
             let n_line: Vec<TNode> = TNode::bg_ranges(orig_n_line)
                 .iter()
                 .flat_map(|bgr| match bgr.color {
-                              Some(_) => slice(orig_n_line, &(bgr.start..bgr.end)),
-                              None => {
-                                  bg_ranges_slice(&ex_n_line_bgrs, &(bgr.start + x..bgr.end + x))
-                                      .iter()
-                                      .flat_map(|ex_n_line_bgr| {
-                    let n_slice = slice(orig_n_line,
-                                        &(ex_n_line_bgr.start - x..ex_n_line_bgr.end - x));
-                    match ex_n_line_bgr.color {
-                        Some(c) => vec![TNode::Bg(c, n_slice)],
-                        None => n_slice,
+                    Some(_) => slice(orig_n_line, &(bgr.start..bgr.end)),
+                    None => {
+                        bg_ranges_slice(&ex_n_line_bgrs, &(bgr.start + x..bgr.end + x))
+                            .iter()
+                            .flat_map(|ex_n_line_bgr| {
+                                let n_slice = slice(
+                                    orig_n_line,
+                                    &(ex_n_line_bgr.start - x..ex_n_line_bgr.end - x),
+                                );
+                                match ex_n_line_bgr.color {
+                                    Some(c) => vec![TNode::Bg(c, n_slice)],
+                                    None => n_slice,
+                                }
+                            })
+                            .collect()
                     }
                 })
-                                      .collect()
-                              }
-                          })
                 .collect();
             // Remove parts of existing lines which this new line now covers.
             lines[n_line_y] = lines[n_line_y]
@@ -331,11 +341,14 @@ fn canvas(els: &[(usize, usize, Vec<Node>)], players: &[Player]) -> Vec<TNode> {
                         new_parts.push((ex_x, slice(ex_n_line, &(0..x - ex_x))))
                     }
                     if ex_x + ex_n_line_len > x + n_line_len {
-                        new_parts.push((x + n_line_len,
-                                        slice(ex_n_line,
-                                              &(ex_n_line_len -
-                                                ((ex_x + ex_n_line_len) - (x + n_line_len))..
-                                                ex_n_line_len))));
+                        new_parts.push((
+                            x + n_line_len,
+                            slice(
+                                ex_n_line,
+                                &(ex_n_line_len - ((ex_x + ex_n_line_len) - (x + n_line_len))..
+                                      ex_n_line_len),
+                            ),
+                        ));
                     }
                     new_parts
                 })
@@ -344,25 +357,25 @@ fn canvas(els: &[(usize, usize, Vec<Node>)], players: &[Player]) -> Vec<TNode> {
         }
     }
     from_lines(&lines
-                    .iter()
-                    .map(|l| {
-        let mut sorted_l = l.clone();
-        sorted_l.sort_by(|&(ref a, _), &(ref b, _)| a.cmp(b));
-        let mut last_x = 0;
-        sorted_l
-            .iter()
-            .flat_map(|&(x, ref nodes)| {
-                let ret_nodes = if x > last_x {
-                    indent(x - last_x, nodes)
-                } else {
-                    nodes.clone()
-                };
-                last_x = x + TNode::len(nodes);
-                ret_nodes
-            })
-            .collect()
-    })
-                    .collect::<Vec<Vec<TNode>>>())
+        .iter()
+        .map(|l| {
+            let mut sorted_l = l.clone();
+            sorted_l.sort_by(|&(ref a, _), &(ref b, _)| a.cmp(b));
+            let mut last_x = 0;
+            sorted_l
+                .iter()
+                .flat_map(|&(x, ref nodes)| {
+                    let ret_nodes = if x > last_x {
+                        indent(x - last_x, nodes)
+                    } else {
+                        nodes.clone()
+                    };
+                    last_x = x + TNode::len(nodes);
+                    ret_nodes
+                })
+                .collect()
+        })
+        .collect::<Vec<Vec<TNode>>>())
 }
 
 #[cfg(test)]
@@ -374,57 +387,105 @@ mod tests {
 
     #[test]
     fn align_works() {
-        assert_eq!(transform(&vec![N::Align(A::Left, 10, vec![N::text("abc")])], &[]),
-                   vec![TN::text("abc"), TN::text("       ")]);
-        assert_eq!(transform(&vec![N::Align(A::Center, 10, vec![N::text("abc")])], &[]),
-                   vec![TN::text("   "), TN::text("abc"), TN::text("    ")]);
-        assert_eq!(transform(&vec![N::Align(A::Right, 10, vec![N::text("abc")])], &[]),
-                   vec![TN::text("       "), TN::text("abc")]);
+        assert_eq!(
+            transform(&vec![N::Align(A::Left, 10, vec![N::text("abc")])], &[]),
+            vec![TN::text("abc"), TN::text("       ")]
+        );
+        assert_eq!(
+            transform(&vec![N::Align(A::Center, 10, vec![N::text("abc")])], &[]),
+            vec![TN::text("   "), TN::text("abc"), TN::text("    ")]
+        );
+        assert_eq!(
+            transform(&vec![N::Align(A::Right, 10, vec![N::text("abc")])], &[]),
+            vec![TN::text("       "), TN::text("abc")]
+        );
     }
 
     #[test]
     fn table_align_works() {
-        assert_eq!("           blah     \nheadersome long text".to_string(),
-                   render(&transform(&vec![N::Table(vec![vec![(A::Left, vec![]),
-                                                              (A::Center,
-                                                               vec![N::Fg(GREY.into(),
-                                                                          vec![N::text("blah",)])])],
-                                                         vec![(A::Right,
-                                                               vec![N::text("header")]),
-                                                              (A::Center,
-                                                               vec![N::text("some long \
-                                                                             text")])]])],
-                                     &[])));
+        assert_eq!(
+            "           blah     \nheadersome long text".to_string(),
+            render(&transform(
+                &vec![
+                    N::Table(vec![
+                        vec![
+                            (A::Left, vec![]),
+                            (
+                                A::Center,
+                                vec![N::Fg(GREY.into(), vec![N::text("blah")])]
+                            ),
+                        ],
+                        vec![
+                            (A::Right, vec![N::text("header")]),
+                            (
+                                A::Center,
+                                vec![
+                                    N::text(
+                                        "some long \
+                                         text"
+                                    ),
+                                ]
+                            ),
+                        ],
+                    ]),
+                ],
+                &[],
+            ))
+        );
     }
 
     #[test]
     fn table_in_table_works() {
-        let t = vec![N::Table(vec![vec![(A::Left, vec![N::text("one")])],
-                                   vec![(A::Left, vec![N::text("two")])],
-                                   vec![(A::Left, vec![N::text("three")])]])];
-        assert_eq!(render(&transform(&t, &[])),
-                   render(&transform(&vec![N::Table(vec![vec![(A::Left, t.clone())]])], &[])));
+        let t = vec![
+            N::Table(vec![
+                vec![(A::Left, vec![N::text("one")])],
+                vec![(A::Left, vec![N::text("two")])],
+                vec![(A::Left, vec![N::text("three")])],
+            ]),
+        ];
+        assert_eq!(
+            render(&transform(&t, &[])),
+            render(&transform(
+                &vec![N::Table(vec![vec![(A::Left, t.clone())]])],
+                &[],
+            ))
+        );
     }
 
     #[test]
     fn to_lines_works() {
-        assert_eq!(to_lines(&vec![TN::text("one\ntwo")]),
-                   vec![vec![TN::text("one")], vec![TN::text("two")]]);
+        assert_eq!(
+            to_lines(&vec![TN::text("one\ntwo")]),
+            vec![vec![TN::text("one")], vec![TN::text("two")]]
+        );
     }
 
     #[test]
     fn slice_works() {
-        assert_eq!(slice(&vec![TN::Fg(RED, vec![TN::Bold(vec![TN::text("blah")])])],
-                         &(1..3)),
-                   vec![TN::Fg(RED, vec![TN::Bold(vec![TN::text("la")])])]);
-        assert_eq!(slice(&vec![TN::Bold(vec![TN::Fg(RED,
-                                                    vec![TN::text("one"), TN::text("two")]),
-                                             TN::Bg(BLUE,
-                                                    vec![TN::text("three"), TN::text("four")]),
-                                             TN::Bg(GREY,
-                                                    vec![TN::text("five"), TN::text("six")])])],
-                         &(10..16)),
-                   vec![TN::Bold(vec![TN::Bg(BLUE, vec![TN::text("e"), TN::text("four")]),
-                                      TN::Bg(GREY, vec![TN::text("f")])])]);
+        assert_eq!(
+            slice(
+                &vec![TN::Fg(RED, vec![TN::Bold(vec![TN::text("blah")])])],
+                &(1..3),
+            ),
+            vec![TN::Fg(RED, vec![TN::Bold(vec![TN::text("la")])])]
+        );
+        assert_eq!(
+            slice(
+                &vec![
+                    TN::Bold(vec![
+                        TN::Fg(RED, vec![TN::text("one"), TN::text("two")]),
+                        TN::Bg(BLUE, vec![TN::text("three"), TN::text("four")]),
+                        TN::Bg(GREY, vec![TN::text("five"), TN::text("six")]),
+                    ]),
+                ],
+                &(10..16),
+            ),
+            vec![
+                TN::Bold(vec![
+                    TN::Bg(BLUE, vec![TN::text("e"), TN::text("four")]),
+                    TN::Bg(GREY, vec![TN::text("f")]),
+                ]),
+            ]
+        );
     }
 }
