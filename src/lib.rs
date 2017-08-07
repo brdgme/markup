@@ -7,7 +7,7 @@ extern crate error_chain;
 
 extern crate brdgme_color;
 
-mod ast;
+pub mod ast;
 mod transform;
 mod ansi;
 mod html;
