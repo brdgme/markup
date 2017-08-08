@@ -1,5 +1,5 @@
-use ast::{Node, TNode, Row, Align, BgRange, Col, ColType, ColTrans};
-use brdgme_color::{Color, player_color};
+use ast::{Align, BgRange, Col, ColTrans, ColType, Node, Row, TNode};
+use brdgme_color::{player_color, Color};
 
 use std::cmp;
 use std::iter;
@@ -13,12 +13,10 @@ pub struct Player {
 impl Col {
     fn to_color(&self, players: &[Player]) -> Color {
         let mut c = match self.color {
-            ColType::Player(p) => {
-                players
-                    .get(p)
-                    .map(|p| p.color)
-                    .unwrap_or_else(|| player_color(p).to_owned())
-            }
+            ColType::Player(p) => players
+                .get(p)
+                .map(|p| p.color)
+                .unwrap_or_else(|| player_color(p).to_owned()),
             ColType::RGB(c) => c,
         };
         for tf in &self.transform {
@@ -66,10 +64,7 @@ fn player(p: usize, players: &[Player]) -> Vec<TNode> {
         .unwrap_or_else(|| player_color(p).to_owned());
     vec![
         TNode::Bold(vec![
-            TNode::Fg(
-                p_col,
-                vec![TNode::text(format!("<{}>", p_name))]
-            ),
+            TNode::Fg(p_col, vec![TNode::text(format!("<{}>", p_name))]),
         ]),
     ]
 }
@@ -176,24 +171,18 @@ pub fn to_lines(nodes: &[TNode]) -> Vec<Vec<TNode>> {
     let mut line: Vec<TNode> = vec![];
     for n in nodes {
         let n_lines: Vec<Vec<TNode>> = match *n {
-            TNode::Fg(ref color, ref children) => {
-                to_lines(children)
-                    .iter()
-                    .map(|l| vec![TNode::Fg(*color, l.to_owned())])
-                    .collect()
-            }
-            TNode::Bg(ref color, ref children) => {
-                to_lines(children)
-                    .iter()
-                    .map(|l| vec![TNode::Bg(*color, l.to_owned())])
-                    .collect()
-            }
-            TNode::Bold(ref children) => {
-                to_lines(children)
-                    .iter()
-                    .map(|l| vec![TNode::Bold(l.to_owned())])
-                    .collect()
-            }
+            TNode::Fg(ref color, ref children) => to_lines(children)
+                .iter()
+                .map(|l| vec![TNode::Fg(*color, l.to_owned())])
+                .collect(),
+            TNode::Bg(ref color, ref children) => to_lines(children)
+                .iter()
+                .map(|l| vec![TNode::Bg(*color, l.to_owned())])
+                .collect(),
+            TNode::Bold(ref children) => to_lines(children)
+                .iter()
+                .map(|l| vec![TNode::Bold(l.to_owned())])
+                .collect(),
             TNode::Text(ref text) => text.split('\n').map(|l| vec![TNode::text(l)]).collect(),
         };
         let n_lines_len = n_lines.len();
@@ -306,21 +295,19 @@ fn canvas(els: &[(usize, usize, Vec<Node>)], players: &[Player]) -> Vec<TNode> {
                 .iter()
                 .flat_map(|bgr| match bgr.color {
                     Some(_) => slice(orig_n_line, &(bgr.start..bgr.end)),
-                    None => {
-                        bg_ranges_slice(&ex_n_line_bgrs, &(bgr.start + x..bgr.end + x))
-                            .iter()
-                            .flat_map(|ex_n_line_bgr| {
-                                let n_slice = slice(
-                                    orig_n_line,
-                                    &(ex_n_line_bgr.start - x..ex_n_line_bgr.end - x),
-                                );
-                                match ex_n_line_bgr.color {
-                                    Some(c) => vec![TNode::Bg(c, n_slice)],
-                                    None => n_slice,
-                                }
-                            })
-                            .collect()
-                    }
+                    None => bg_ranges_slice(&ex_n_line_bgrs, &(bgr.start + x..bgr.end + x))
+                        .iter()
+                        .flat_map(|ex_n_line_bgr| {
+                            let n_slice = slice(
+                                orig_n_line,
+                                &(ex_n_line_bgr.start - x..ex_n_line_bgr.end - x),
+                            );
+                            match ex_n_line_bgr.color {
+                                Some(c) => vec![TNode::Bg(c, n_slice)],
+                                None => n_slice,
+                            }
+                        })
+                        .collect(),
                 })
                 .collect();
             // Remove parts of existing lines which this new line now covers.
@@ -346,7 +333,7 @@ fn canvas(els: &[(usize, usize, Vec<Node>)], players: &[Player]) -> Vec<TNode> {
                             slice(
                                 ex_n_line,
                                 &(ex_n_line_len - ((ex_x + ex_n_line_len) - (x + n_line_len))..
-                                      ex_n_line_len),
+                                    ex_n_line_len),
                             ),
                         ));
                     }
@@ -383,7 +370,7 @@ mod tests {
     use super::*;
     use brdgme_color::*;
     use plain::render;
-    use ast::{Node as N, TNode as TN, Align as A};
+    use ast::{Align as A, Node as N, TNode as TN};
 
     #[test]
     fn align_works() {
@@ -410,10 +397,7 @@ mod tests {
                     N::Table(vec![
                         vec![
                             (A::Left, vec![]),
-                            (
-                                A::Center,
-                                vec![N::Fg(GREY.into(), vec![N::text("blah")])]
-                            ),
+                            (A::Center, vec![N::Fg(GREY.into(), vec![N::text("blah")])]),
                         ],
                         vec![
                             (A::Right, vec![N::text("header")]),
@@ -422,15 +406,15 @@ mod tests {
                                 vec![
                                     N::text(
                                         "some long \
-                                         text"
+                                         text",
                                     ),
-                                ]
+                                ],
                             ),
                         ],
                     ]),
                 ],
                 &[],
-            ))
+            ),)
         );
     }
 
@@ -448,7 +432,7 @@ mod tests {
             render(&transform(
                 &vec![N::Table(vec![vec![(A::Left, t.clone())]])],
                 &[],
-            ))
+            ),)
         );
     }
 

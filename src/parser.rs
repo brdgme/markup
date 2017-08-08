@@ -1,21 +1,30 @@
-use combine::{many, many1, Parser};
-use combine::char::{letter, string, digit};
-use combine::combinator::{choice, parser, try, none_of};
-use combine::primitives::{Stream, ParseResult};
+use combine::{many, Parser, many1};
+use combine::char::{digit, letter, string};
+use combine::combinator::{choice, none_of, parser, try};
+use combine::primitives::{ParseResult, Stream};
 
 use std::str::FromStr;
 
 use brdgme_color::*;
 
-use ast::{Node, Row, Cell, Align, Col, ColType, ColTrans};
+use ast::{Align, Cell, Col, ColTrans, ColType, Node, Row};
 
 pub fn parse<I>(input: I) -> ParseResult<Vec<Node>, I>
 where
     I: Stream<Item = char>,
 {
-    many(choice(
-        [bold, fg, bg, c, player, canvas, table, text, align, indent],
-    )).parse_stream(input)
+    many(choice([
+        bold,
+        fg,
+        bg,
+        c,
+        player,
+        canvas,
+        table,
+        text,
+        align,
+        indent,
+    ])).parse_stream(input)
 }
 
 fn bold<I>(input: I) -> ParseResult<Node, I>
@@ -286,7 +295,7 @@ mod tests {
     use super::super::to_string;
     use combine::parser;
 
-    use ast::{Node as N, Align as A, Col, ColType, ColTrans};
+    use ast::{Align as A, Col, ColTrans, ColType, Node as N};
 
     #[test]
     fn parse_works() {
@@ -322,21 +331,21 @@ mod tests {
                                                                     10,
                                                                     vec![
                                                                         N::text(
-                                                                            "this is some text"
+                                                                            "this is some text",
                                                                         ),
-                                                                    ]
+                                                                    ],
                                                                 ),
-                                                            ]
+                                                            ],
                                                         ),
-                                                    ]
+                                                    ],
                                                 ),
-                                            ]
+                                            ],
                                         ),
-                                    ]
+                                    ],
                                 ),
                             ],
                         ]),
-                    ]
+                    ],
                 ),
             ]),
         ];

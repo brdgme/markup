@@ -80,6 +80,18 @@ impl Col {
             .collect::<Vec<String>>()
             .join(" | ")
     }
+
+    pub fn inv(&self) -> Self {
+        let mut new = self.clone();
+        new.transform.push(ColTrans::Inv);
+        new
+    }
+
+    pub fn mono(&self) -> Self {
+        let mut new = self.clone();
+        new.transform.push(ColTrans::Mono);
+        new
+    }
 }
 
 impl From<usize> for Col {
@@ -165,8 +177,7 @@ impl TNode {
                     }
                     offset += last_end;
                 }
-                TNode::Fg(_, ref children) |
-                TNode::Bold(ref children) => {
+                TNode::Fg(_, ref children) | TNode::Bold(ref children) => {
                     let mut last_end = 0;
                     for bgr in TNode::bg_ranges(children) {
                         rs.push(bgr.offset(offset));
@@ -182,13 +193,12 @@ impl TNode {
     /// Calculates the length of the containing text.  Panics if it detects an untransformed node.
     pub fn len(nodes: &[TNode]) -> usize {
         nodes.iter().fold(0, |sum, n| {
-            sum +
-                match *n {
-                    TNode::Text(ref text) => text.chars().count(),
-                    TNode::Fg(_, ref children) |
-                    TNode::Bg(_, ref children) |
-                    TNode::Bold(ref children) => TNode::len(children),
-                }
+            sum + match *n {
+                TNode::Text(ref text) => text.chars().count(),
+                TNode::Fg(_, ref children) |
+                TNode::Bg(_, ref children) |
+                TNode::Bold(ref children) => TNode::len(children),
+            }
         })
     }
 }
@@ -278,9 +288,9 @@ mod tests {
                                 TNode::text("lolol"),
                                 TNode::Bg(ORANGE, vec![TNode::text("egg")]),
                                 TNode::text("bacon!"),
-                            ]
+                            ],
                         ),
-                    ]
+                    ],
                 ),
                 TNode::text("harharhar"),
             ])
