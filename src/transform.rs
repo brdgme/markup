@@ -1,8 +1,8 @@
 use ast::{Align, BgRange, Col, ColTrans, ColType, Node, Row, TNode};
 use brdgme_color::{player_color, Color};
 
-use std::cmp;
 use std::iter;
+use std::cmp;
 use std::ops::Range;
 
 pub struct Player {
