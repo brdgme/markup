@@ -3,11 +3,12 @@ extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 #[macro_use]
-extern crate error_chain;
+extern crate failure;
 
 extern crate brdgme_color;
 
 pub mod ast;
+mod error;
 mod transform;
 mod ansi;
 mod html;
@@ -17,11 +18,7 @@ mod parser;
 pub use transform::{from_lines, to_lines, transform, Player};
 pub use ast::{row_pad, row_pad_cell, Align, Node, Row, TNode};
 use parser::parse;
-
-pub mod errors {
-    error_chain!{}
-}
-use errors::*;
+pub use error::MarkupError;
 
 pub fn html(input: &[TNode]) -> String {
     html::render(input)
@@ -35,10 +32,10 @@ pub fn plain(input: &[TNode]) -> String {
     plain::render(input)
 }
 
-pub fn from_string(input: &str) -> Result<(Vec<Node>, &str)> {
+pub fn from_string(input: &str) -> Result<(Vec<Node>, &str), MarkupError> {
     parse(input)
         .map(|(nodes, remaining)| (nodes, remaining.into_inner()))
-        .map_err(|_| ErrorKind::Msg("".to_string()).into())
+        .map_err(|_| MarkupError::Parse)
 }
 
 pub fn to_string(input: &[Node]) -> String {
