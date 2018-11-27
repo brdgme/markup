@@ -1,4 +1,4 @@
-use ast::TNode;
+use crate::ast::TNode;
 use brdgme_color::Style;
 
 pub fn render(input: &[TNode]) -> String {

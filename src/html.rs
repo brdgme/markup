@@ -1,4 +1,4 @@
-use ast::TNode;
+use crate::ast::TNode;
 use brdgme_color::Color;
 
 fn fg(color: &Color, content: &str) -> String {

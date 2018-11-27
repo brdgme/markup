@@ -1,4 +1,4 @@
-use ast::TNode;
+use crate::ast::TNode;
 
 pub fn render(input: &[TNode]) -> String {
     let mut buf = String::new();

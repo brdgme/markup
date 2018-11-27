@@ -1,4 +1,7 @@
+use serde_derive::{Serialize, Deserialize};
+
 use brdgme_color::Color;
+
 use std::str::FromStr;
 
 #[derive(PartialEq, Debug, Clone, Serialize, Deserialize)]

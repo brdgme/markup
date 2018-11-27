@@ -1,13 +1,13 @@
 use combine::{many, Parser, many1};
 use combine::char::{digit, letter, string};
-use combine::combinator::{choice, none_of, parser, try};
+use combine::combinator::{choice, none_of, parser, r#try};
 use combine::primitives::{ParseResult, Stream};
 
 use std::str::FromStr;
 
 use brdgme_color::*;
 
-use ast::{Align, Cell, Col, ColTrans, ColType, Node, Row};
+use crate::ast::{Align, Cell, Col, ColTrans, ColType, Node, Row};
 
 pub fn parse<I>(input: I) -> ParseResult<Vec<Node>, I>
 where
@@ -31,7 +31,7 @@ fn bold<I>(input: I) -> ParseResult<Node, I>
 where
     I: Stream<Item = char>,
 {
-    (try(string("{{b}}")), parser(parse), string("{{/b}}"))
+    (r#try(string("{{b}}")), parser(parse), string("{{/b}}"))
         .map(|(_, children, _)| Node::Bold(children))
         .parse_stream(input)
 }
@@ -59,7 +59,7 @@ where
     I: Stream<Item = char>,
 {
     (
-        try(string("{{fg ")),
+        r#try(string("{{fg ")),
         parser(col_args),
         string("}}"),
         parser(parse),
@@ -73,7 +73,7 @@ where
     I: Stream<Item = char>,
 {
     (
-        try(string("{{bg ")),
+        r#try(string("{{bg ")),
         parser(col_args),
         string("}}"),
         parser(parse),
@@ -102,7 +102,7 @@ fn col_type_player<I>(input: I) -> ParseResult<ColType, I>
 where
     I: Stream<Item = char>,
 {
-    (try(string("player(")), parser(parse_usize), string(")"))
+    (r#try(string("player(")), parser(parse_usize), string(")"))
         .map(|(_, p, _)| ColType::Player(p))
         .parse_stream(input)
 }
@@ -112,7 +112,7 @@ where
     I: Stream<Item = char>,
 {
     (
-        try(string("rgb(")),
+        r#try(string("rgb(")),
         parser(parse_u8),
         string(","),
         parser(parse_u8),
@@ -129,7 +129,7 @@ fn col_trans<I>(input: I) -> ParseResult<ColTrans, I>
 where
     I: Stream<Item = char>,
 {
-    (try(string(" | ")), choice([string("mono"), string("inv")]))
+    (r#try(string(" | ")), choice([string("mono"), string("inv")]))
         .map(|(_, t)| match t {
             "mono" => ColTrans::Mono,
             "inv" => ColTrans::Inv,
@@ -145,7 +145,7 @@ where
     I: Stream<Item = char>,
 {
     (
-        try(string("{{c ")),
+        r#try(string("{{c ")),
         many1::<String, _>(letter()),
         string("}}"),
         parser(parse),
@@ -168,7 +168,7 @@ fn player<I>(input: I) -> ParseResult<Node, I>
 where
     I: Stream<Item = char>,
 {
-    (try(string("{{player ")), parser(parse_usize), string("}}"))
+    (r#try(string("{{player ")), parser(parse_usize), string("}}"))
         .map(|(_, p, _)| Node::Player(p))
         .parse_stream(input)
 }
@@ -178,7 +178,7 @@ where
     I: Stream<Item = char>,
 {
     (
-        try(string("{{canvas}}")),
+        r#try(string("{{canvas}}")),
         many(parser(layer)),
         string("{{/canvas}}"),
     ).map(|(_, layers, _)| Node::Canvas(layers))
@@ -190,7 +190,7 @@ where
     I: Stream<Item = char>,
 {
     (
-        try(string("{{layer ")),
+        r#try(string("{{layer ")),
         parser(parse_usize),
         string(" "),
         parser(parse_usize),
@@ -206,7 +206,7 @@ where
     I: Stream<Item = char>,
 {
     (
-        try(string("{{table}}")),
+        r#try(string("{{table}}")),
         many(parser(row)),
         string("{{/table}}"),
     ).map(|(_, rows, _)| Node::Table(rows))
@@ -218,7 +218,7 @@ where
     I: Stream<Item = char>,
 {
     (
-        try(string("{{row}}")),
+        r#try(string("{{row}}")),
         many(parser(cell)),
         string("{{/row}}"),
     ).map(|(_, cells, _)| cells)
@@ -230,7 +230,7 @@ where
     I: Stream<Item = char>,
 {
     (
-        try(string("{{cell ")),
+        r#try(string("{{cell ")),
         parser(align_arg),
         string("}}"),
         parser(parse),
@@ -244,7 +244,7 @@ where
     I: Stream<Item = char>,
 {
     (
-        try(string("{{align ")),
+        r#try(string("{{align ")),
         parser(align_arg),
         string(" "),
         parser(parse_usize),
@@ -262,7 +262,7 @@ where
     I: Stream<Item = char>,
 {
     (
-        try(string("{{indent ")),
+        r#try(string("{{indent ")),
         parser(parse_usize),
         string("}}"),
         parser(parse),
@@ -295,7 +295,7 @@ mod tests {
     use super::super::to_string;
     use combine::parser;
 
-    use ast::{Align as A, Col, ColTrans, ColType, Node as N};
+    use crate::ast::{Align as A, Col, ColTrans, ColType, Node as N};
 
     #[test]
     fn parse_works() {

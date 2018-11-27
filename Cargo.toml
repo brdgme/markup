@@ -2,6 +2,7 @@
 name = "brdgme-markup"
 version = "0.1.0"
 authors = ["Michael Alexander <beefsack@gmail.com>"]
+edition = "2018"
 
 [dependencies]
 brdgme-color = { git = "https://github.com/brdgme/color.git" }

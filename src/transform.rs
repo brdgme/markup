@@ -1,4 +1,4 @@
-use ast::{Align, BgRange, Col, ColTrans, ColType, Node, Row, TNode};
+use crate::ast::{Align, BgRange, Col, ColTrans, ColType, Node, Row, TNode};
 use brdgme_color::{player_color, Color};
 
 use std::iter;
@@ -369,8 +369,8 @@ fn canvas(els: &[(usize, usize, Vec<Node>)], players: &[Player]) -> Vec<TNode> {
 mod tests {
     use super::*;
     use brdgme_color::*;
-    use plain::render;
-    use ast::{Align as A, Node as N, TNode as TN};
+    use crate::plain::render;
+    use crate::ast::{Align as A, Node as N, TNode as TN};
 
     #[test]
     fn align_works() {
